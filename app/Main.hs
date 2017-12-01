@@ -6,14 +6,17 @@ import           System.FilePath
 import           Text.Printf
 import           Text.Read
 import qualified Data.IntMap        as IM
+import qualified Data.Map           as M
 
-tests :: IM.IntMap Challenge
-tests = IM.fromList [(1, day01)]
+tests :: IM.IntMap (M.Map String Challenge)
+tests = IM.fromList [(1, M.fromList [("a", day01a)
+                                    ,("b", day01b)])
+                    ]
 
 main :: IO ()
 main = do
-    a:_ <- getArgs
+    a:p:_ <- getArgs
     let Just d = readMaybe a
-        Just t = IM.lookup d tests
+        Just t = M.lookup p =<< IM.lookup d tests
     putStrLn . t =<< readFile ("data" </> printf "%02d" d <.> "txt")
 
