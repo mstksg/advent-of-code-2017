@@ -1,8 +1,9 @@
 
 module AOC2017 (
-    module A
+    module AOC
   ) where
 
-import AOC2017.Day01 as A
-import AOC2017.Types as A
+import AOC2017.Day01 as AOC
+import AOC2017.Day02 as AOC
+import AOC2017.Types as AOC
 

@@ -20,12 +20,13 @@ description:         Please see the README on Github at <https://github.com/mstk
 library
   hs-source-dirs:      src
   exposed-modules:     AOC2017
-                       AOC2017.Day01
                        AOC2017.Types
+  other-modules:       AOC2017.Day01
+                       AOC2017.Day02
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5.10.2
   default-language:    Haskell2010
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
+  ghc-options:         -Wall
 
 executable aoc2017
   hs-source-dirs:      app

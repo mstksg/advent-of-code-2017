@@ -11,6 +11,8 @@ import qualified Data.Map           as M
 tests :: IM.IntMap (M.Map String Challenge)
 tests = IM.fromList [(1, M.fromList [("a", day01a)
                                     ,("b", day01b)])
+                    ,(2, M.fromList [("a", day02a)
+                                    ,("b", day02b)])
                     ]
 
 main :: IO ()
