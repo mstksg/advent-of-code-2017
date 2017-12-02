@@ -3,7 +3,6 @@
 module AOC2017.Day02 (day02a, day02b) where
 
 import           AOC2017.Types
-import           Control.Monad
 import           Data.List
 import           Data.Maybe
 
@@ -22,6 +21,5 @@ day02b = maybe "Bad lines" (show . sum) . traverse (check . sort) . parse
     check xs = listToMaybe $ do
       y:ys      <- tails xs
       candidate <- ys
-      let (d, r) = candidate `divMod` y
-      guard $ r == 0
+      (d, 0)    <- return $ candidate `divMod` y
       return d
