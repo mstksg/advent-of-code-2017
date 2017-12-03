@@ -61,11 +61,10 @@ updateMap p = state $ \m0 ->
                           ]
     in  (newPoint, M.insert p newPoint m0)
 
-cellNums :: State (M.Map Point Int) [Int]
-cellNums = do
-    put $ M.singleton (P 0 0) 1
+cellNums :: [Int]
+cellNums = flip evalState (M.singleton (P 0 0) 1) $
     (1 :) <$> traverse updateMap (tail ulam)
 
 day03b :: Challenge
-day03b (read->i) = show . fromJust . find (> i) $ evalState cellNums M.empty
+day03b (read->i) = show . fromJust $ find (> i) cellNums
 
