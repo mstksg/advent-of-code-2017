@@ -32,13 +32,13 @@ move p = EK $ \p0 -> writer (p0 <> p, [p0 <> p])
 
 spiral :: Trail Point
 spiral = move (0,0)
-      <> foldMap loop [0..]
+      <> foldMap loop [1..]
   where
     loop :: Int -> Trail Point
-    loop n = mtimes (2*n  ) (move (-1, 0))
-          <> mtimes (2*n  ) (move ( 0,-1))
-          <> mtimes (2*n+1) (move ( 1, 0))
-          <> mtimes (2*n+1) (move ( 0, 1))
+    loop n = stimes (2*n-1) (move ( 1, 0))
+          <> stimes (2*n-1) (move ( 0, 1))
+          <> stimes (2*n  ) (move (-1, 0))
+          <> stimes (2*n  ) (move ( 0,-1))
 
 ulam :: [Point]
 ulam = execWriter $ runEK spiral (0,0)
@@ -61,11 +61,3 @@ cellNums = flip evalState (M.singleton (0, 0) 1) $
 
 day03b :: Challenge
 day03b (read->i) = show . fromJust $ find (> i) cellNums
-
--- | stimesMonoid is a really really awful name
---
--- @
--- mtimes n x = x <> x <> ... n times
--- @
-mtimes :: Monoid m => Int -> m -> m
-mtimes = stimesMonoid
