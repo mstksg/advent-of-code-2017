@@ -11,6 +11,11 @@ conseqs :: [a] -> [(a,a)]
 conseqs []     = []
 conseqs (x:xs) = zip (x:xs) (xs ++ [x])
 
+-- | Boo
+_simpleBisect :: [a] -> ([a], [a])
+_simpleBisect xs = splitAt (length xs `div` 2) xs
+
+-- | Yes
 bisect :: [a] -> ([a],[a])
 bisect = bimap reverse toList . snd . foldl' go (False, ([], Seq.empty))
   where
