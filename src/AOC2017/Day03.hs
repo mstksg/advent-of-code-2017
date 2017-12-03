@@ -22,30 +22,26 @@ instance Monad m => Monoid (EndoKleisli m a) where
 
 type Trail a = EndoKleisli (Writer [a]) a
 
-data Point = P !Int !Int
-    deriving (Show, Eq, Ord)
+type Point = (Sum Int, Sum Int)
 
 norm :: Point -> Int
-norm (P x y) = abs x + abs y
-
-add :: Point -> Point -> Point
-add (P x1 y1) (P x2 y2) = P (x1 + x2) (y1 + y2)
+norm (Sum x, Sum y) = abs x + abs y
 
 move :: Point -> Trail Point
-move p = EK $ \p0 -> writer (add p0 p, [add p0 p])
+move p = EK $ \p0 -> writer (p0 <> p, [p0 <> p])
 
 spiral :: Trail Point
-spiral = foldMap move [P 0 0, P 1 0, P 0 1]
+spiral = foldMap move [(0,0), (1,0), (0,1)]
       <> foldMap loop [1..]
   where
     loop :: Int -> Trail Point
-    loop n = stimes (2*n  ) (move (P (-1)   0 ))
-          <> stimes (2*n  ) (move (P   0  (-1)))
-          <> stimes (2*n+1) (move (P   1    0 ))
-          <> stimes (2*n+1) (move (P   0    1 ))
+    loop n = stimes (2*n  ) (move (-1, 0))
+          <> stimes (2*n  ) (move ( 0,-1))
+          <> stimes (2*n+1) (move ( 1, 0))
+          <> stimes (2*n+1) (move ( 0, 1))
 
 ulam :: [Point]
-ulam = execWriter $ runEK spiral (P 0 0)
+ulam = execWriter $ runEK spiral (0,0)
 
 day03a :: Challenge
 day03a (read->i) = show . norm $ ulam !! (i - 1)
@@ -53,14 +49,14 @@ day03a (read->i) = show . norm $ ulam !! (i - 1)
 updateMap :: Point -> State (M.Map Point Int) Int
 updateMap p = state $ \m0 ->
     let newPoint = sum . mapMaybe (`M.lookup` m0) $
-          [ p `add` P x y | x <- [-1 .. 1]
-                          , y <- [-1 .. 1]
-                          , x /= 0 || y /= 0
-                          ]
+          [ p <> (Sum x, Sum y) | x <- [-1 .. 1]
+                                , y <- [-1 .. 1]
+                                , x /= 0 || y /= 0
+                                ]
     in  (newPoint, M.insertWith (const id) p newPoint m0)
 
 cellNums :: [Int]
-cellNums = flip evalState (M.singleton (P 0 0) 1) $
+cellNums = flip evalState (M.singleton (0, 0) 1) $
     traverse updateMap ulam
 
 day03b :: Challenge
