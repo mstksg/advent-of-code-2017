@@ -54,16 +54,16 @@ day03a (read->i) = show . norm $ ulam !! (i - 1)
 
 updateMap :: Point -> State (M.Map Point Int) Int
 updateMap p = state $ \m0 ->
-    let Sum newPoint = foldMap (Sum . flip (M.findWithDefault 0) m0)
+    let newPoint = sum . mapMaybe (`M.lookup` m0) $
           [ p `add` P x y | x <- [-1 .. 1]
                           , y <- [-1 .. 1]
                           , x /= 0 || y /= 0
                           ]
-    in  (newPoint, M.insert p newPoint m0)
+    in  (newPoint, M.insertWith (const id) p newPoint m0)
 
 cellNums :: [Int]
 cellNums = flip evalState (M.singleton (P 0 0) 1) $
-    (1 :) <$> traverse updateMap (tail ulam)
+    traverse updateMap ulam
 
 day03b :: Challenge
 day03b (read->i) = show . fromJust $ find (> i) cellNums
