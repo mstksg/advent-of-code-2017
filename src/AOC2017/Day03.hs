@@ -35,9 +35,7 @@ move :: Point -> Trail Point
 move p = EK $ \p0 -> writer (add p0 p, [add p0 p])
 
 spiral :: Trail Point
-spiral = move (P 0 0)
-      <> move (P 1 0)
-      <> move (P 0 1)
+spiral = foldMap move [P 0 0, P 1 0, P 0 1]
       <> foldMap loop [1..]
   where
     loop :: Int -> Trail Point
