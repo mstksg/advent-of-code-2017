@@ -31,14 +31,14 @@ move :: Point -> Trail Point
 move p = EK $ \p0 -> writer (p0 <> p, [p0 <> p])
 
 spiral :: Trail Point
-spiral = foldMap move [(0,0), (1,0), (0,1)]
-      <> foldMap loop [1..]
+spiral = move (0,0)
+      <> foldMap loop [0..]
   where
     loop :: Int -> Trail Point
-    loop n = stimes (2*n  ) (move (-1, 0))
-          <> stimes (2*n  ) (move ( 0,-1))
-          <> stimes (2*n+1) (move ( 1, 0))
-          <> stimes (2*n+1) (move ( 0, 1))
+    loop n = stimesMonoid (2*n  ) (move (-1, 0))
+          <> stimesMonoid (2*n  ) (move ( 0,-1))
+          <> stimesMonoid (2*n+1) (move ( 1, 0))
+          <> stimesMonoid (2*n+1) (move ( 0, 1))
 
 ulam :: [Point]
 ulam = execWriter $ runEK spiral (0,0)
