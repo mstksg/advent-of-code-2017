@@ -64,20 +64,19 @@ main = do
     case toRun of
       Left e  -> putStrLn e
       Right cs
-        | _oBench   -> flip runAll cs $ \c x -> benchmark (nf c x)
-        | otherwise -> flip runAll cs $ \c x -> putStrLn (c x)
+        | _oBench   -> void . flip runAll cs $ \c x -> benchmark (nf c x)
+        | otherwise -> void . flip runAll cs $ \c x -> putStrLn (c x)
 
 runAll
-    :: (Challenge -> String -> IO ())
+    :: (Challenge -> String -> IO a)
     -> IM.IntMap (M.Map Char Challenge)
-    -> IO ()
-runAll f = void . IM.traverseWithKey runParts
-  where
-    runParts d = M.traverseWithKey $ \p c -> do
-      printf ">> Day %02d%c\n" d p
-      inp <- evaluate . force 
-         =<< readFile ("data" </> printf "%02d" d <.> "txt")
-      f c inp
+    -> IO (IM.IntMap (M.Map Char a))
+runAll f = IM.traverseWithKey $ \d ->
+           M.traverseWithKey  $ \p c -> do
+    printf ">> Day %02d%c\n" d p
+    inp <- evaluate . force 
+       =<< readFile ("data" </> printf "%02d" d <.> "txt")
+    f c inp
 
 parseOpts :: Parser Opts
 parseOpts = do
