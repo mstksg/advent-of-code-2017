@@ -67,13 +67,17 @@ main = do
         | _oBench   -> flip runAll cs $ \c x -> benchmark (nf c x)
         | otherwise -> flip runAll cs $ \c x -> putStrLn (c x)
 
-runAll :: (Challenge -> String -> IO ()) -> IM.IntMap (M.Map Char Challenge) -> IO ()
+runAll
+    :: (Challenge -> String -> IO ())
+    -> IM.IntMap (M.Map Char Challenge)
+    -> IO ()
 runAll f = void . IM.traverseWithKey runParts
   where
     runParts d = M.traverseWithKey $ \p c -> do
       printf ">> Day %02d%c\n" d p
-      f c =<< evaluate . force
-          =<< readFile ("data" </> printf "%02d" d <.> "txt")
+      inp <- evaluate . force 
+         =<< readFile ("data" </> printf "%02d" d <.> "txt")
+      f c inp
 
 parseOpts :: Parser Opts
 parseOpts = do
