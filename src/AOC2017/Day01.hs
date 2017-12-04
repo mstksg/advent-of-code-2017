@@ -13,14 +13,11 @@ bisect xs = splitAt (length xs `div` 2) xs
 matchings :: Eq a => [(a,a)] -> [a]
 matchings = map fst . filter (uncurry (==))
 
-sumMatchings :: (Num a, Eq a) => [(a,a)] -> a
-sumMatchings = sum . matchings
-
 parse :: String -> [Int]
 parse = map digitToInt . filter isDigit
 
 day01a :: Challenge
-day01a = show . sumMatchings . conseqs . parse
+day01a = show . sum . matchings . conseqs . parse
 
 day01b :: Challenge
-day01b = show . (*2) . sumMatchings . uncurry zip . bisect . parse
+day01b = show . (*2) . sum . matchings . uncurry zip . bisect . parse
