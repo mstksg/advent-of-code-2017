@@ -18,7 +18,6 @@ day02b = show . sum . map (check . sort) . parse
   where
     -- a bit of prolog never hurt anyone?
     check xs = head $ do
-      y:ys      <- tails xs
-      candidate <- ys
-      (d, 0)    <- return $ candidate `divMod` y
+      y:ys   <- tails xs
+      (d, 0) <- (`divMod` y) <$> ys
       return d
