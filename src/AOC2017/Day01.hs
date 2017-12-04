@@ -1,7 +1,7 @@
 module AOC2017.Day01 (day01a, day01b) where
 
-import           AOC2017.Types
-import           Data.Char
+import           AOC2017.Types (Challenge)
+import           Data.Char     (isDigit, digitToInt)
 
 conseqs :: [a] -> [(a,a)]
 conseqs []     = []

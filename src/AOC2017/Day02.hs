@@ -2,9 +2,9 @@
 
 module AOC2017.Day02 (day02a, day02b) where
 
-import           AOC2017.Types
-import           Data.List
-import           Data.Maybe
+import           AOC2017.Types (Challenge)
+import           Data.List     (sort, tails)
+import           Data.Maybe    (listToMaybe)
 
 parse :: String -> [[Int]]
 parse = map (map (read @Int) . words) . lines

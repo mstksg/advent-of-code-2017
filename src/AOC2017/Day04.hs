@@ -2,8 +2,8 @@
 
 module AOC2017.Day04 (day04a, day04b) where
 
-import           AOC2017.Types
-import           Data.List
+import           AOC2017.Types (Challenge)
+import           Data.List     (sort)
 import qualified Data.Set      as S
 
 uniq :: Ord a => [a] -> Bool

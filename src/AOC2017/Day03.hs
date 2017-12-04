@@ -3,13 +3,13 @@
 
 module AOC2017.Day03 (day03a, day03b) where
 
-import           AOC2017.Types
-import           Control.Monad
-import           Control.Monad.Trans.State
-import           Control.Monad.Trans.Writer
-import           Data.List
-import           Data.Maybe
-import           Data.Semigroup
+import           AOC2017.Types              (Challenge)
+import           Control.Monad              ((>=>))
+import           Control.Monad.Trans.State  (State, state, evalState)
+import           Control.Monad.Trans.Writer (Writer, writer, execWriter)
+import           Data.List                  (find)
+import           Data.Maybe                 (mapMaybe, fromJust)
+import           Data.Semigroup             (Semigroup(..), Sum(..))
 import qualified Data.Map                   as M
 
 -- Why aren't these defined in base by default?
