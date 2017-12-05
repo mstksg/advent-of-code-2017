@@ -15,6 +15,7 @@ import           Data.Finite
 import           Data.Semigroup
 import           Options.Applicative
 import           System.FilePath
+import           System.IO.Error
 import           Text.Printf
 import           Text.Read
 import qualified Data.IntMap         as IM
@@ -66,19 +67,22 @@ main = do
     case toRun of
       Left e  -> putStrLn e
       Right cs
-        | _oBench   -> void . flip runAll cs $ \c x -> benchmark (nf c x)
-        | otherwise -> void . flip runAll cs $ \c x -> putStrLn (c x)
+        | _oBench   -> flip runAll cs $ \c x -> benchmark (nf c x)
+        | otherwise -> flip runAll cs $ \c x -> putStrLn (c x)
 
 runAll
-    :: (Challenge -> String -> IO a)
+    :: (Challenge -> String -> IO ())
     -> IM.IntMap (M.Map Char Challenge)
-    -> IO (IM.IntMap (M.Map Char a))
-runAll f = IM.traverseWithKey $ \d ->
+    -> IO ()
+runAll f = fmap void          $
+           IM.traverseWithKey $ \d ->
            M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
-    inp <- evaluate . force 
-       =<< readFile ("data" </> printf "%02d" d <.> "txt")
-    f c inp
+    let fn = "data" </> printf "%02d" d <.> "txt"
+    inp <- tryJust (guard . isDoesNotExistError) $ readFile fn
+    case inp of
+      Left () -> printf "[ERROR] Input file %s not found\n" fn
+      Right i -> f c =<< evaluate (force i)
 
 parseOpts :: Parser Opts
 parseOpts = do
