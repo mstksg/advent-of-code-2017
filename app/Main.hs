@@ -32,6 +32,11 @@ data Opts = O { _oTestSpec :: TestSpec
               , _oBench    :: Bool
               }
 
+data ChallengeData = CD { _cdInp   :: !String
+                        , _cdAns   :: !(Maybe String)
+                        , _cdTests :: ![(String, String)]
+                        }
+
 tests :: IM.IntMap (M.Map Char Challenge)
 tests = IM.fromList [(1, M.fromList [('a', day01a)
                                     ,('b', day01b)])
@@ -67,22 +72,45 @@ main = do
     case toRun of
       Left e  -> putStrLn e
       Right cs
-        | _oBench   -> flip runAll cs $ \c x -> benchmark (nf c x)
-        | otherwise -> flip runAll cs $ \c x -> putStrLn (c x)
+        | _oBench   -> flip runAll cs $ \c CD{..} ->
+            benchmark (nf c _cdInp)
+        | otherwise -> flip runAll cs $ \c CD{..} -> do
+            let res = c _cdInp
+                (mark, showAns) = case _cdAns of
+                  Just (filter (/= '\n')->ans)
+                    | filter (/= '\n') res == ans -> ('✓', Nothing )
+                    | otherwise                   -> ('✗', Just ans)
+                  Nothing                         -> ('?', Nothing)
+            printf "[%c] %s\n" mark res
+            mapM_ (printf "(Expected: %s)\n") showAns
 
 runAll
-    :: (Challenge -> String -> IO ())
+    :: (Challenge -> ChallengeData -> IO ())
     -> IM.IntMap (M.Map Char Challenge)
     -> IO ()
 runAll f = fmap void          $
            IM.traverseWithKey $ \d ->
            M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
-    let fn = "data" </> printf "%02d" d <.> "txt"
-    inp <- tryJust (guard . isDoesNotExistError) $ readFile fn
-    case inp of
-      Left () -> printf "[ERROR] Input file %s not found\n" fn
-      Right i -> f c =<< evaluate (force i)
+    cdE <- getData d p
+    case cdE of
+      Left fn  -> printf "[ERROR] Input file %s not found\n" fn
+      Right cd -> f c cd
+  where
+    getData :: Int -> Char -> IO (Either String ChallengeData)
+    getData d p = do
+        inpMaybe <- maybe (Left inpFn) Right <$> readFileMaybe inpFn
+        forM inpMaybe $ \inp -> do
+          ans <- readFileMaybe ansFn
+          return $ CD inp ans []
+      where
+        inpFn = "data"     </> printf "%02d" d <.> "txt"
+        ansFn = "data/ans" </> printf "%02d%c" d p <.> "txt"
+    readFileMaybe :: FilePath -> IO (Maybe String)
+    readFileMaybe =
+        (traverse (evaluate . force) . either (const Nothing) Just =<<)
+       . tryJust (guard . isDoesNotExistError)
+       . readFile
 
 parseOpts :: Parser Opts
 parseOpts = do
