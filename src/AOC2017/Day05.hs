@@ -45,7 +45,7 @@ day05b = show . length . unfold_ (step update) . parse
       | otherwise = x + 1
 
 unfold_ :: (a -> Maybe a) -> a -> [a]
-unfold_ f = unfoldr (fmap dup . f)
+unfold_ f x0 = x0 : unfoldr (fmap dup . f) x0
   where
     dup x = (x,x)
 
