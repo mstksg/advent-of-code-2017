@@ -40,6 +40,8 @@ tests = IM.fromList [(1, M.fromList [('a', day01a)
                                     ,('b', day03b)])
                     ,(4, M.fromList [('a', day04a)
                                     ,('b', day04b)])
+                    ,(5, M.fromList [('a', day05a)
+                                    ,('b', day05b)])
                     ]
 
 main :: IO ()
