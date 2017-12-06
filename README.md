@@ -3,6 +3,19 @@ Advent of Code 2017
 
 **Warning: Spoilers**
 
+Reflections
+-----------
+
+Check out [my reflections][] page where I go over all of my solutions.
+
+[my reflections]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
+
+Actual solution source files are in the [src/AOC2017][sols] directory.
+
+[sols]: https://github.com/mstksg/advent-of-code-2017/tree/master/src/AOC2017
+
+Executable
+----------
 
 Comes with test examples given in problems.
 

@@ -83,10 +83,10 @@ all `y : ys`, where `y` is some element in our list, and `ys` is all of items
 greater than or equal to `y` in the list.
 
 Then we consider the `divMod` of any number in `ys` by `y`, but only the ones
-that give a `mod` of 0 (the perfect divisor of `y` in ys).
+that give a `mod` of 0 (the *perfect divisor* of `y` in `ys`).
 
 Our result is `d`, the result of the perfect division.
 
 Parsing is pretty straightforward again; we can use `map (map read . words) .
-lines :: String -> [[Int]]` to split by lines, then by words, and parse every
+lines :: String -> [[Int]]` to split by lines, then by words, and `read` every
 word.
