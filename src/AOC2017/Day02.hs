@@ -1,12 +1,10 @@
-{-# LANGUAGE TypeApplications #-}
-
 module AOC2017.Day02 (day02a, day02b) where
 
 import           AOC2017.Types (Challenge)
 import           Data.List     (sort, tails)
 
 parse :: String -> [[Int]]
-parse = map (map (read @Int) . words) . lines
+parse = map (map read. words) . lines
 
 day02a :: Challenge
 day02a = show . sum . map check . parse

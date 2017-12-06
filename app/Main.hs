@@ -91,7 +91,7 @@ main = do
                     | and testRes = ('✓', ANSI.Green)
                     | otherwise   = ('✗', ANSI.Red  )
             ANSI.setSGR [ ANSI.SetColor ANSI.Foreground ANSI.Vivid color ]
-            printf "[%c] Passed %d out of %d tests\n"
+            printf "[%c] Passed %d out of %d test(s)\n"
                 mark
                 (length (filter id testRes))
                 (length testRes)
@@ -123,13 +123,14 @@ runAll f = fmap void          $
         testsFn = "test-data" </> printf "%02d%c" d p <.> "txt"
     parseTests :: [String] -> [(String, Maybe String)]
     parseTests xs = case break (">>> " `isPrefixOf`) xs of
-      (inp,[])
+      (strip.unlines->inp,[])
         | null inp  -> []
-        | otherwise -> [(strip (unlines inp), Nothing)]
-      (inp,(strip.drop 4->ans):rest) ->
-        let inp' = strip (unlines inp)
-            ans' = ans <$ guard (not (null ans))
-        in  (inp', ans') : parseTests rest
+        | otherwise -> [(inp, Nothing)]
+      (strip.unlines->inp,(strip.drop 4->ans):rest)
+        | null inp  -> parseTests rest
+        | otherwise ->
+            let ans' = ans <$ guard (not (null ans))
+            in  (inp, ans') : parseTests rest
     readFileMaybe :: FilePath -> IO (Maybe String)
     readFileMaybe =
         (traverse (evaluate . force) . either (const Nothing) Just =<<)
@@ -144,7 +145,10 @@ testCase emph c inp ans = do
     if emph
       then printf " (%s)\n" res
       else printf " %s\n" res
-    mapM_ (printf "(Expected: %s)\n") showAns
+    forM_ showAns $ \a -> do
+      ANSI.setSGR [ ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Red ]
+      printf "(Expected: %s)\n" a
+      ANSI.setSGR [ ANSI.Reset ]
     return status
   where
     res = c inp

@@ -1,4 +1,3 @@
-
 {-# LANGUAGE ViewPatterns #-}
 
 module AOC2017.Day05 (day05a, day05b) where
