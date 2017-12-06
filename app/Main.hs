@@ -12,6 +12,7 @@ import           Control.Monad
 import           Criterion
 import           Data.Char
 import           Data.Finite
+import           Data.List
 import           Data.Semigroup
 import           Options.Applicative
 import           System.FilePath
@@ -20,6 +21,8 @@ import           Text.Printf
 import           Text.Read
 import qualified Data.IntMap         as IM
 import qualified Data.Map            as M
+import qualified Data.Text           as T
+import qualified System.Console.ANSI as ANSI
 
 data TestSpec = TSAll
               | TSDayAll  { _tsDay  :: Finite 25 }
@@ -29,12 +32,13 @@ data TestSpec = TSAll
   deriving Show
 
 data Opts = O { _oTestSpec :: TestSpec
+              , _oTests    :: Bool
               , _oBench    :: Bool
               }
 
-data ChallengeData = CD { _cdInp   :: !String
+data ChallengeData = CD { _cdInp   :: !(Either FilePath String)
                         , _cdAns   :: !(Maybe String)
-                        , _cdTests :: ![(String, String)]
+                        , _cdTests :: ![(String, Maybe String)]
                         }
 
 tests :: IM.IntMap (M.Map Char Challenge)
@@ -71,18 +75,18 @@ main = do
             return $ IM.singleton d (M.singleton p c)
     case toRun of
       Left e  -> putStrLn e
-      Right cs
-        | _oBench   -> flip runAll cs $ \c CD{..} ->
-            benchmark (nf c _cdInp)
-        | otherwise -> flip runAll cs $ \c CD{..} -> do
-            let res = c _cdInp
-                (mark, showAns) = case _cdAns of
-                  Just (filter (/= '\n')->ans)
-                    | filter (/= '\n') res == ans -> ('✓', Nothing )
-                    | otherwise                   -> ('✗', Just ans)
-                  Nothing                         -> ('?', Nothing)
-            printf "[%c] %s\n" mark res
-            mapM_ (printf "(Expected: %s)\n") showAns
+      Right cs -> flip runAll cs $ \c CD{..} -> do
+        case _cdInp of
+          Left fn | not _oTests || _oBench ->
+            printf "[ERROR] Puzzle input file %s not found\n" fn
+          _ ->
+            return ()
+        when _oTests $
+          mapM_ (uncurry (testCase True c)) _cdTests
+        when (_oTests || not _oBench) . forM_ _cdInp $ \inp ->
+            testCase False c inp _cdAns
+        when _oBench . forM_ _cdInp $ \inp ->
+          benchmark (nf c inp)
 
 runAll
     :: (Challenge -> ChallengeData -> IO ())
@@ -92,25 +96,54 @@ runAll f = fmap void          $
            IM.traverseWithKey $ \d ->
            M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
-    cdE <- getData d p
-    case cdE of
-      Left fn  -> printf "[ERROR] Input file %s not found\n" fn
-      Right cd -> f c cd
+    f c =<< getData d p
   where
-    getData :: Int -> Char -> IO (Either String ChallengeData)
+    getData :: Int -> Char -> IO ChallengeData
     getData d p = do
-        inpMaybe <- maybe (Left inpFn) Right <$> readFileMaybe inpFn
-        forM inpMaybe $ \inp -> do
-          ans <- readFileMaybe ansFn
-          return $ CD inp ans []
+        inp   <- maybe (Left inpFn) Right <$> readFileMaybe inpFn
+        ans   <- readFileMaybe ansFn
+        ts    <- foldMap (parseTests . lines) <$> readFileMaybe testsFn
+        return $ CD inp ans ts
       where
-        inpFn = "data"     </> printf "%02d" d <.> "txt"
-        ansFn = "data/ans" </> printf "%02d%c" d p <.> "txt"
+        inpFn   = "data"     </> printf "%02d" d <.> "txt"
+        ansFn   = "data/ans" </> printf "%02d%c" d p <.> "txt"
+        testsFn = "test-data" </> printf "%02d%c" d p <.> "txt"
+    parseTests :: [String] -> [(String, Maybe String)]
+    parseTests xs = case break (">>> " `isPrefixOf`) xs of
+      (inp,[])
+        | null inp  -> []
+        | otherwise -> [(strip (unlines inp), Nothing)]
+      (inp,(strip.drop 4->ans):rest) ->
+        let inp' = strip (unlines inp)
+            ans' = ans <$ guard (not (null ans))
+        in  (inp', ans') : parseTests rest
     readFileMaybe :: FilePath -> IO (Maybe String)
     readFileMaybe =
         (traverse (evaluate . force) . either (const Nothing) Just =<<)
        . tryJust (guard . isDoesNotExistError)
        . readFile
+
+testCase :: Bool -> Challenge -> String -> Maybe String -> IO (Maybe Bool)
+testCase emph c inp ans = do
+    ANSI.setSGR [ ANSI.SetColor ANSI.Foreground ANSI.Vivid color ]
+    printf "[%c]" mark
+    ANSI.setSGR [ ANSI.Reset ]
+    if emph
+      then printf " (%s)\n" res
+      else printf " %s\n" res
+    mapM_ (printf "(Expected: %s)\n") showAns
+    return status
+  where
+    res = c inp
+    (mark, showAns, status) = case ans of
+      Just (strip->ex)
+        | strip res == ex -> ('✓', Nothing, Just True )
+        | otherwise       -> ('✗', Just ex, Just False)
+      Nothing             -> ('?', Nothing, Nothing   )
+    color = case status of
+      Just True  -> ANSI.Green
+      Just False -> ANSI.Red
+      Nothing    -> ANSI.Blue
 
 parseOpts :: Parser Opts
 parseOpts = do
@@ -120,15 +153,17 @@ parseOpts = do
     p <- optional $ argument pPart ( metavar "PART"
                                   <> help "Challenge part (a, b, c, etc.)"
                                    )
+    t <- switch $ long "tests"
+               <> short 't'
+               <> help "Run sample tests"
     b <- switch $ long "bench"
                <> short 'b'
                <> help "Run benchmarks"
-    pure (($ b) $ case d of
-            Just d' -> case p of
-                         Just p' -> O $ TSDayPart d' p'
-                         Nothing -> O $ TSDayAll  d'
-            Nothing -> O TSAll
-         )
+    pure $ case d of
+      Just d' -> case p of
+        Just p' -> O (TSDayPart d' p') t b
+        Nothing -> O (TSDayAll  d') t b
+      Nothing -> O TSAll t b
   where
     pFin = eitherReader $ \s -> do
         n <- maybe (Left "Invalid day") Right $ readMaybe s
@@ -141,3 +176,5 @@ parseOpts = do
             | otherwise -> Left "Invalid part (not an alphabet letter)"
         _   -> Left "Invalid part (not a single alphabet letter)"
 
+strip :: String -> String
+strip = T.unpack . T.strip . T.pack
