@@ -13,6 +13,7 @@ import           Criterion
 import           Data.Char
 import           Data.Finite
 import           Data.List
+import           Data.Maybe
 import           Data.Semigroup
 import           Options.Applicative
 import           System.FilePath
@@ -81,8 +82,18 @@ main = do
             printf "[ERROR] Puzzle input file %s not found\n" fn
           _ ->
             return ()
-        when _oTests $
-          mapM_ (uncurry (testCase True c)) _cdTests
+        when _oTests $ do
+          testRes <- catMaybes <$> mapM (uncurry (testCase True c)) _cdTests
+          unless (null testRes) $ do
+            let (mark, color)
+                    | and testRes = ('✓', ANSI.Green)
+                    | otherwise   = ('✗', ANSI.Red  )
+            ANSI.setSGR [ ANSI.SetColor ANSI.Foreground ANSI.Vivid color ]
+            printf "[%c] Passed %d out of %d tests\n"
+                mark
+                (length (filter id testRes))
+                (length testRes)
+            ANSI.setSGR [ ANSI.Reset ]
         when (_oTests || not _oBench) . forM_ _cdInp $ \inp ->
             testCase False c inp _cdAns
         when _oBench . forM_ _cdInp $ \inp ->
