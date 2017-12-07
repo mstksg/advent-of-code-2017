@@ -31,15 +31,14 @@ parseLine _ = error "No parse"
 buildTree :: Report -> Tree
 buildTree m = go root
   where
+    allChildren :: S.Set String
+    allChildren = S.unions (snd <$> toList m)
+    root :: String
+    root = S.findMax $ M.keysSet m `S.difference` allChildren
     go :: String -> Tree
     go p = Tree p w (go <$> S.toList cs)
       where
         (w, cs) = m M.! p
-    root :: String
-    root = S.findMax $
-        M.keysSet m `S.difference` allChildren
-      where
-        allChildren = S.unions (snd <$> toList m)
 
 -- | Check if any children are bad; otherwise, check yourself
 findBad :: Tree -> Maybe Int
