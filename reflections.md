@@ -576,26 +576,32 @@ Our input is essentially `M.Map String (Int, S.Set String)`, a map of string
 labels to their weights and the labels of their leaves.
 
 ```haskell
+-- | Returns the root label and the tree
 buildTree
     :: M.Map String (Int, S.Set String)
     -> (String, Tree Int)
-buildTree m = (root, go root)
+buildTree m = (root, result)
   where
-    go :: String -> Tree Int
-    go p = Node w (go <$> S.toList cs)
-      where
-        (w, cs) = m M.! p
-
     allChildren :: S.Set String
     allChildren = S.unions (snd <$> toList m)
     root :: String
     root = S.findMax $ M.keysSet m `S.difference` allChildren
+
+    result :: Tree Int
+    result = flip unfoldTree root $ \p ->
+      let (w, cs) = m M.! p
+      in  (w, toList cs)
+
 ```
 
-Building a tree is pretty simple recursively -- just recursively look up the
-children of our parent nodes.  The only complication is finding the "root" of
-the entire tree.  This is simply the only symbol that is not in the union of
-all children sets.
+Building a tree is pretty simple with `unfoldTree :: (a -> [b] -> (a,[b])) -> b
+-> Tree a`.  Given an initial seed value, and a way to give a "result" (node
+content) and all new seeds, it can unfold out a tree for us.  The initial seed
+is the root node, and the unfolding process looks up the weights and all of the
+children of the given label.
+
+The only complication now is finding the "root" of the entire tree.  This is
+simply the only symbol that is not in the union of all children sets.
 
 We technically don't need the strings in the tree, but we do need it for Part
 1, so we can return it as a second input using a tuple.

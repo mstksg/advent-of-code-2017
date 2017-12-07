@@ -22,16 +22,17 @@ parseLine _ = error "No parse"
 buildTree
     :: M.Map String (Int, S.Set String)
     -> (String, Tree Int)
-buildTree m = (root, go root)
+buildTree m = (root, result)
   where
     allChildren :: S.Set String
     allChildren = S.unions (snd <$> toList m)
     root :: String
     root = S.findMax $ M.keysSet m `S.difference` allChildren
-    go :: String -> Tree Int
-    go p = Node w (go <$> S.toList cs)
-      where
-        (w, cs) = m M.! p
+
+    result :: Tree Int
+    result = flip unfoldTree root $ \p ->
+      let (w, cs) = m M.! p
+      in  (w, toList cs)
 
 -- | Check if any children are bad; otherwise, check yourself
 findBad :: Tree Int -> Maybe Int
