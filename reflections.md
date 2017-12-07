@@ -544,18 +544,18 @@ V.Vector Int`.
 ```
 >> Day 06a
 benchmarking...
-time                 735.3 ms   (696.4 ms .. NaN s)
-                     0.999 R²   (0.998 R² .. 1.000 R²)
-mean                 698.6 ms   (688.9 ms .. 707.4 ms)
-std dev              14.59 ms   (0.0 s .. 15.25 ms)
+time                 681.9 ms   (658.3 ms .. 693.4 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 669.9 ms   (665.6 ms .. 672.8 ms)
+std dev              4.220 ms   (0.0 s .. 4.869 ms)
 variance introduced by outliers: 19% (moderately inflated)
 
 >> Day 06b
 benchmarking...
-time                 622.8 ms   (556.6 ms .. 777.0 ms)
-                     0.993 R²   (0.987 R² .. 1.000 R²)
-mean                 685.0 ms   (658.1 ms .. 701.9 ms)
-std dev              25.50 ms   (0.0 s .. 29.30 ms)
+time                 688.7 ms   (504.2 ms .. 881.2 ms)
+                     0.990 R²   (0.964 R² .. 1.000 R²)
+mean                 710.2 ms   (687.9 ms .. 731.7 ms)
+std dev              36.52 ms   (0.0 s .. 37.19 ms)
 variance introduced by outliers: 19% (moderately inflated)
 ```
 
@@ -683,17 +683,18 @@ parse = M.fromList . map parseLine . lines
 ```
 >> Day 07a
 benchmarking...
-time                 8.562 ms   (7.067 ms .. 9.751 ms)
-                     0.858 R²   (0.654 R² .. 0.961 R²)
-mean                 9.634 ms   (8.727 ms .. 11.72 ms)
-std dev              3.496 ms   (1.340 ms .. 5.820 ms)
-variance introduced by outliers: 96% (severely inflated)
+time                 8.411 ms   (7.956 ms .. 8.961 ms)
+                     0.973 R²   (0.954 R² .. 0.989 R²)
+mean                 8.129 ms   (7.939 ms .. 8.447 ms)
+std dev              736.6 μs   (501.9 μs .. 1.058 ms)
+variance introduced by outliers: 50% (moderately inflated)
 
 >> Day 07b
 benchmarking...
-time                 12.65 ms   (11.70 ms .. 13.86 ms)
-                     0.953 R²   (0.899 R² .. 0.991 R²)
-mean                 12.44 ms   (12.03 ms .. 13.30 ms)
-std dev              1.409 ms   (1.024 ms .. 2.120 ms)
-variance introduced by outliers: 58% (severely inflated)
+time                 12.30 ms   (11.36 ms .. 14.21 ms)
+                     0.909 R²   (0.815 R² .. 0.993 R²)
+mean                 12.06 ms   (11.55 ms .. 13.00 ms)
+std dev              1.799 ms   (935.1 μs .. 2.877 ms)
+variance introduced by outliers: 69% (severely inflated)
+
 ```
