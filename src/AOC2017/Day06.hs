@@ -2,30 +2,19 @@
 
 module AOC2017.Day06 (day06a, day06b) where
 
-import           AOC2017.Types (Challenge)
-import           Control.Lens  (ix, (.~), (+~))
-import           Data.Function ((&))
+import           AOC2017.Types    (Challenge)
 import           Data.Maybe
-import qualified Data.Map      as M
-import qualified Data.Vector   as V
-
-dropBlocks
-    :: Int                  -- ^ number to drop
-    -> Int                  -- ^ index to start dropping at
-    -> V.Vector Int
-    -> V.Vector Int
-dropBlocks n i0 v0 = snd $ iterate dropBlock (i0, v0) !! n
-  where
-    dropBlock (i, v) = (i', v & ix i' +~ 1)
-      where
-        i' = (i + 1) `mod` V.length v
+import qualified Data.Map         as M
+import qualified Data.Vector      as V
 
 step :: V.Vector Int -> V.Vector Int
-step v = dropBlocks maxBlocks maxIx v'
+step v = V.accum (+) v' [ (i `mod` V.length v, 1)
+                        | i <- [maxIx + 1 .. maxIx + maxBlocks]
+                        ]
   where
     maxIx     = V.maxIndex v
     maxBlocks = v V.! maxIx
-    v'        = v & ix maxIx .~ 0
+    v'        = v V.// [(maxIx, 0)]
 
 -- | Returns the location of the first loop, and the length of the loop
 findLoop :: Ord a => [a] -> Maybe (Int, Int)
