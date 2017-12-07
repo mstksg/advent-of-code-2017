@@ -28,6 +28,7 @@ import qualified Data.IntMap                as IM
 import qualified Data.Map                   as M
 import qualified Data.Text                  as T
 import qualified System.Console.ANSI        as ANSI
+import qualified System.Console.Haskeline   as HL
 
 data TestSpec = TSAll
               | TSDayAll  { _tsDay  :: Finite 25 }
@@ -39,7 +40,6 @@ data TestSpec = TSAll
 data Opts = O { _oTestSpec :: TestSpec
               , _oTests    :: Bool
               , _oBench    :: Bool
-              , _oSession  :: Maybe String
               }
 
 data ChallengeData = CD { _cdInp   :: !(Either [String] String)
@@ -83,10 +83,11 @@ main = do
             return $ IM.singleton d (M.singleton p c)
     case toRun of
       Left e  -> putStrLn e
-      Right cs -> flip (runAll _oSession) cs $ \c CD{..} -> do
+      Right cs -> flip runAll cs $ \c CD{..} -> do
         case _cdInp of
-          Left err | not _oTests || _oBench ->
-            putStrLn $ "[ERROR]: " ++ intercalate "; " err
+          Left err | not _oTests || _oBench -> do
+            putStrLn "[ERROR]"
+            mapM_ (putStrLn . ("  " ++)) err
           _ ->
             return ()
         when _oTests $ do
@@ -102,18 +103,17 @@ main = do
                 (length testRes)
             ANSI.setSGR [ ANSI.Reset ]
         when (_oTests || not _oBench) . forM_ _cdInp $ \inp ->
-            testCase False c inp _cdAns
+          testCase False c inp _cdAns
         when _oBench . forM_ _cdInp $ \inp ->
           benchmark (nf c inp)
 
 runAll
-    :: Maybe String
-    -> (Challenge -> ChallengeData -> IO ())
+    :: (Challenge -> ChallengeData -> IO ())
     -> IM.IntMap (M.Map Char Challenge)
     -> IO ()
-runAll sess f = fmap void          $
-                IM.traverseWithKey $ \d ->
-                M.traverseWithKey  $ \p c -> do
+runAll f = fmap void          $
+           IM.traverseWithKey $ \d ->
+           M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
     f c =<< getData d p
   where
@@ -131,10 +131,18 @@ runAll sess f = fmap void          $
         fileErr = printf "Input file not found at %s" inpFn
         fetchInput :: ExceptT [String] IO String
         fetchInput = do
-          s <- maybe (throwE ["Session key needed to fetch input"]) return
-              sess
-          (_, r) <- liftIO . withCurlDo . curlGetString dataUrl $
-              CurlCookie (printf "session=%s" s) : method_GET
+          sess <- ExceptT . liftIO . HL.runInputT HL.defaultSettings $
+            maybe (Left ["Session key needed to fetch input"]) Right <$>
+              HL.getPassword Nothing "Enter session key to fetch data file: "
+          (cc, r) <- liftIO . withCurlDo . curlGetString dataUrl $
+              CurlCookie (printf "session=%s" sess) : method_GET
+          case cc of
+            CurlOK -> return ()
+            _      -> throwE [ "Error contacting advent of code server to fetch input"
+                             , "Possible invalid session key"
+                             , printf "Url: %s" dataUrl
+                             , printf "Server respose: %s" r
+                             ]
           liftIO $ writeFile inpFn r
           return r
         dataUrl = printf "http://adventofcode.com/2017/day/%d/input" d
@@ -196,16 +204,11 @@ parseOpts = do
     b <- switch $ long "bench"
                <> short 'b'
                <> help "Run benchmarks"
-    s <- optional $ strOption ( long "session"
-                             <> short 's'
-                             <> metavar "TOKEN"
-                             <> help "Session cookie token for fetching inputs"
-                              )
     pure $ case d of
       Just d' -> case p of
-        Just p' -> O (TSDayPart d' p') t b s
-        Nothing -> O (TSDayAll  d') t b s
-      Nothing -> O TSAll t b s
+        Just p' -> O (TSDayPart d' p') t b
+        Nothing -> O (TSDayAll  d') t b
+      Nothing -> O TSAll t b
   where
     pFin = eitherReader $ \s -> do
         n <- maybe (Left "Invalid day") Right $ readMaybe s
