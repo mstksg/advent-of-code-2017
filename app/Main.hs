@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo   #-}
 {-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns    #-}
@@ -18,17 +19,20 @@ import           Data.Foldable
 import           Data.List
 import           Data.Maybe
 import           Data.Semigroup
+import           GHC.Generics                (Generic)
 import           Network.Curl
 import           Options.Applicative
 import           System.FilePath
 import           System.IO.Error
 import           Text.Printf
 import           Text.Read
-import qualified Data.IntMap                as IM
-import qualified Data.Map                   as M
-import qualified Data.Text                  as T
-import qualified System.Console.ANSI        as ANSI
-import qualified System.Console.Haskeline   as HL
+import qualified Data.Aeson                  as A
+import qualified Data.ByteString             as BS
+import qualified Data.IntMap                 as IM
+import qualified Data.Map                    as M
+import qualified Data.Text                   as T
+import qualified Data.Yaml                   as Y
+import qualified System.Console.ANSI         as ANSI
 
 data TestSpec = TSAll
               | TSDayAll  { _tsDay  :: Finite 25 }
@@ -40,12 +44,16 @@ data TestSpec = TSAll
 data Opts = O { _oTestSpec :: TestSpec
               , _oTests    :: Bool
               , _oBench    :: Bool
+              , _oConfig   :: Maybe FilePath
               }
 
 data ChallengeData = CD { _cdInp   :: !(Either [String] String)
                         , _cdAns   :: !(Maybe String)
                         , _cdTests :: ![(String, Maybe String)]
                         }
+
+data Config = Cfg { _cfgSession :: Maybe String }
+  deriving (Generic)
 
 tests :: IM.IntMap (M.Map Char Challenge)
 tests = IM.fromList [(1, M.fromList [('a', day01a)
@@ -69,6 +77,7 @@ main = do
                <> header "aoc2017 - Advent of Code 2017 challenge runner"
                <> progDesc "Run challenges from Advent of Code 2017"
                 )
+    Cfg{..} <- configFile $ fromMaybe "aoc2017-conf.yaml" _oConfig
     let toRun = case _oTestSpec of
           TSAll -> Right tests
           TSDayAll (succ.fromIntegral->d) ->
@@ -82,8 +91,8 @@ main = do
                     M.lookup p ps
             return $ IM.singleton d (M.singleton p c)
     case toRun of
-      Left e  -> putStrLn e
-      Right cs -> flip runAll cs $ \c CD{..} -> do
+      Left e   -> putStrLn e
+      Right cs -> flip (runAll _cfgSession) cs $ \c CD{..} -> do
         case _cdInp of
           Left err | not _oTests || _oBench -> do
             putStrLn "[ERROR]"
@@ -108,12 +117,13 @@ main = do
           benchmark (nf c inp)
 
 runAll
-    :: (Challenge -> ChallengeData -> IO ())
+    :: Maybe String
+    -> (Challenge -> ChallengeData -> IO ())
     -> IM.IntMap (M.Map Char Challenge)
     -> IO ()
-runAll f = fmap void          $
-           IM.traverseWithKey $ \d ->
-           M.traverseWithKey  $ \p c -> do
+runAll sess f = fmap void          $
+                IM.traverseWithKey $ \d ->
+                M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
     f c =<< getData d p
   where
@@ -131,11 +141,10 @@ runAll f = fmap void          $
         fileErr = printf "Input file not found at %s" inpFn
         fetchInput :: ExceptT [String] IO String
         fetchInput = do
-          sess <- ExceptT . liftIO . HL.runInputT HL.defaultSettings $
-            maybe (Left ["Session key needed to fetch input"]) Right <$>
-              HL.getPassword Nothing "Enter session key to fetch data file: "
+          s <- maybe (throwE ["Session key needed to fetch input"]) return $
+            sess
           (cc, r) <- liftIO . withCurlDo . curlGetString dataUrl $
-              CurlCookie (printf "session=%s" sess) : method_GET
+              CurlCookie (printf "session=%s" s) : method_GET
           case cc of
             CurlOK -> return ()
             _      -> throwE [ "Error contacting advent of code server to fetch input"
@@ -204,11 +213,17 @@ parseOpts = do
     b <- switch $ long "bench"
                <> short 'b'
                <> help "Run benchmarks"
+    c <- optional $ strOption
+        ( long "config"
+       <> short 'c'
+       <> metavar "PATH"
+       <> help "Path to configuration file (default: aoc2017-conf.yaml)"
+        )
     pure $ case d of
       Just d' -> case p of
-        Just p' -> O (TSDayPart d' p') t b
-        Nothing -> O (TSDayAll  d') t b
-      Nothing -> O TSAll t b
+        Just p' -> O (TSDayPart d' p') t b c
+        Nothing -> O (TSDayAll  d') t b c
+      Nothing -> O TSAll t b c
   where
     pFin = eitherReader $ \s -> do
         n <- maybe (Left "Invalid day") Right $ readMaybe s
@@ -221,5 +236,34 @@ parseOpts = do
             | otherwise -> Left "Invalid part (not an alphabet letter)"
         _   -> Left "Invalid part (not a single alphabet letter)"
 
+configFile :: FilePath -> IO Config
+configFile fp = do
+    cfgInp <- tryJust (guard . isDoesNotExistError)
+            $ BS.readFile fp
+    case cfgInp of
+      Left () -> do
+        Y.encodeFile fp emptyCfg
+        return emptyCfg
+      Right b -> do
+        case Y.decodeEither b of
+          Left e -> do
+            printf "Configuration file at %s could not be parsed:\n" fp
+            print e
+            return emptyCfg
+          Right cfg -> return cfg
+  where
+    emptyCfg = Cfg Nothing
+
 strip :: String -> String
 strip = T.unpack . T.strip . T.pack
+
+configJSON :: A.Options
+configJSON = A.defaultOptions
+    { A.fieldLabelModifier = A.camelTo2 '-' . drop 4 }
+
+instance A.ToJSON Config where
+    toJSON     = A.genericToJSON configJSON
+    toEncoding = A.genericToEncoding configJSON
+instance A.FromJSON Config where
+    parseJSON  = A.genericParseJSON configJSON
+
