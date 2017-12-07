@@ -68,6 +68,8 @@ tests = IM.fromList [(1, M.fromList [('a', day01a)
                                     ,('b', day05b)])
                     ,(6, M.fromList [('a', day06a)
                                     ,('b', day06b)])
+                    ,(7, M.fromList [('a', day07a)
+                                    ,('b', day07b)])
                     ]
 
 main :: IO ()
@@ -150,7 +152,7 @@ runAll sess f = fmap void          $
             _      -> throwE [ "Error contacting advent of code server to fetch input"
                              , "Possible invalid session key"
                              , printf "Url: %s" dataUrl
-                             , printf "Server respose: %s" r
+                             , printf "Server response: %s" r
                              ]
           liftIO $ writeFile inpFn r
           return r
