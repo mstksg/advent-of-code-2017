@@ -11,13 +11,13 @@ Advent of Code 2017
 I try to reflect on every day's puzzle, attempting to describe my thought
 processes and how my solutions all work.  Benchmarks also included.
 
-*   **[Day 1][]** *([code][d1c])* *([benchmarks][d1b])*
-*   **[Day 2][]** *([code][d2c])* *([benchmarks][d1b])*
-*   **[Day 3][]** *([code][d3c])* *([benchmarks][d1b])*
-*   **[Day 4][]** *([code][d4c])* *([benchmarks][d1b])*
-*   **[Day 5][]** *([code][d5c])* *([benchmarks][d1b])*
-*   **[Day 6][]** *([code][d6c])* *([benchmarks][d1b])*
-*   **[Day 7][]** *([code][d7c])* *([benchmarks][d1b])*
+*   **[Day 1 Reflections][]** *([code][d1c])* *([benchmarks][d1b])*
+*   **[Day 2 Reflections][]** *([code][d2c])* *([benchmarks][d1b])*
+*   **[Day 3 Reflections][]** *([code][d3c])* *([benchmarks][d1b])*
+*   **[Day 4 Reflections][]** *([code][d4c])* *([benchmarks][d1b])*
+*   **[Day 5 Reflections][]** *([code][d5c])* *([benchmarks][d1b])*
+*   **[Day 6 Reflections][]** *([code][d6c])* *([benchmarks][d1b])*
+*   **[Day 7 Reflections][]** *([code][d7c])* *([benchmarks][d1b])*
 
 [Day 1]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
 [Day 2]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2

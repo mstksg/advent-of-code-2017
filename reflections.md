@@ -4,6 +4,10 @@ Reflections
 Day 1
 -----
 
+*([code][d1c])*
+
+[d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day01.hs
+
 We can generate a list of consecutive items (while looping around) very crudely
 using:
 
@@ -67,6 +71,10 @@ variance introduced by outliers: 86% (severely inflated)
 
 Day 2
 -----
+
+*([code][d2c])*
+
+[d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day02.hs
 
 Good stream processing demonstration.  Both problems just boil down to summing
 a function on all lines:
@@ -133,6 +141,10 @@ variance introduced by outliers: 85% (severely inflated)
 
 Day 3
 -----
+
+*([code][d3c])*
+
+[d3c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day03.hs
 
 My Day 3 solution revolves around the `Trail` monoid:
 
@@ -275,6 +287,10 @@ variance introduced by outliers: 99% (severely inflated)
 Day 4
 -----
 
+*([code][d4c])*
+
+[d4c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day04.hs
+
 Day 4 is very basic stream processing.  Just filter for lines that have "all
 unique" items, and count how many lines are remaining.
 
@@ -326,6 +342,10 @@ variance introduced by outliers: 88% (severely inflated)
 
 Day 5
 -----
+
+*([code][d5c])*
+
+[d5c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day05.hs
 
 Day 5 centers around the `Tape` zipper:
 
@@ -437,6 +457,10 @@ variance introduced by outliers: 19% (moderately inflated)
 Day 6
 -----
 
+*([code][d6c])*
+
+[d6c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day06.hs
+
 Day 6 is yet another simulation of a virtual machine.  There might be an
 analytic way to do things, but input size is small enough that you can just
 directly simulate the machine in a reasonable time.
@@ -537,6 +561,122 @@ variance introduced by outliers: 19% (moderately inflated)
 
 Day 7
 -----
+
+*([code][d7c])*
+
+[d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day07.hs
+
+We can just build the tree in Haskell.  We have basically a simple rose tree of
+`Int`s, so we can use `Tree Int` from `Data.Tree` (from the *containers*
+package).
+
+### Part 1
+
+Our input is essentially `M.Map String (Int, S.Set String)`, a map of string
+labels to their weights and the labels of their leaves.
+
+```haskell
+buildTree
+    :: M.Map String (Int, S.Set String)
+    -> (String, Tree Int)
+buildTree m = (root, go root)
+  where
+    go :: String -> Tree Int
+    go p = Node w (go <$> S.toList cs)
+      where
+        (w, cs) = m M.! p
+
+    allChildren :: S.Set String
+    allChildren = S.unions (snd <$> toList m)
+    root :: String
+    root = S.findMax $ M.keysSet m `S.difference` allChildren
+```
+
+Building a tree is pretty simple recursively -- just recursively look up the
+children of our parent nodes.  The only complication is finding the "root" of
+the entire tree.  This is simply the only symbol that is not in the union of
+all children sets.
+
+We technically don't need the strings in the tree, but we do need it for Part
+1, so we can return it as a second input using a tuple.
+
+```haskell
+day07a :: M.Map String (Int, S.Set String) -> String
+day07a = fst . buildTree
+```
+
+### Part 2
+
+Time to find the bad node.
+
+```haskell
+findBad :: Tree Int -> Maybe Int
+findBad t0 = listToMaybe badChildren <|> anomaly
+  where
+    badChildren :: [Int]
+    badChildren = mapMaybe findBad $ subForest t0
+    weightMap :: M.Map Int [Int]
+    weightMap = M.fromListWith (++)
+              . map (\t -> (totalWeight t, [rootLabel t]))
+              . toList
+              $ subForest t0
+    anomaly :: Maybe Int
+    anomaly = case sortOn (length . snd) (M.toList weightMap) of
+      -- end of the line
+      []                       -> Nothing
+      -- all weights match
+      [_]                      -> Nothing
+      -- exactly one anomaly
+      [(wTot1, [w]),(wTot2,_)] -> Just (w + (wTot2 - wTot1))
+      -- should not happen
+      _                        -> error "More than one anomaly for node"
+    totalWeight :: Tree Int -> Int
+    totalWeight = foldTree $ \x xs -> x + sum xs
+```
+
+At the heart of it all, we check if *any of the children* are bad, before
+checking if the current node itself is bad.  This is because any anomaly on the
+level of our current node is not fixable if there are any errors in children
+nodes.
+
+To isolate bad nodes, I built a `Map Int [Int]`, which is a map of unique
+"total weight" to a list of all of the immediate child weights that have that
+total weight.
+
+If this map is empty, it means that there are no children.  `Nothing`, no
+anomaly.
+
+If this map has one item, it means that there is only one unique total weight
+amongst all of the child nodes.  `Nothing`, no anomaly.
+
+If the map has two items, it means that there are two distinct total weights,
+and one of those should have exactly *one* corresponding child node.  (We can
+sort the list to ensure that that anomaly node is the first one in the list)
+
+From here we can compute what that anomaly node's weight (`w1`) should *really*
+be, and return `Just` that.
+
+Any other cases don't make sense (more than two distinct total weights, or a
+situation where there isn't exactly one odd node)
+
+```haskell
+day07b :: M.Map String (Int, S.Set String) -> Int
+day07b = findJust . findBad . snd . buildTree
+```
+
+### Parsing
+
+Parsing is straightforward but not trivial.
+
+```haskell
+parseLine :: String -> (String, (Int, S.Set String))
+parseLine (words->p:w:ws) =
+    (p, (read w, S.fromList (filter isAlpha <$> drop 1 ws)))
+parseLine _ = error "No parse"
+
+parse :: String -> M.Map String (Int, S.Set String)
+parse = M.fromList . map parseLine . lines
+```
 
 ### Day 7 Benchmarks
 

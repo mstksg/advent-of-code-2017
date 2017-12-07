@@ -2,10 +2,9 @@
 
 module AOC2017.Day06 (day06a, day06b) where
 
-import           AOC2017.Types    (Challenge)
-import           Data.Maybe
-import qualified Data.Map         as M
-import qualified Data.Vector      as V
+import           AOC2017.Types (Challenge)
+import qualified Data.Map      as M
+import qualified Data.Vector   as V
 
 step :: V.Vector Int -> V.Vector Int
 step v = V.accum (+) v' [ (i `mod` V.length v, 1)

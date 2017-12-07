@@ -9,48 +9,41 @@ import           Data.Char           (isAlpha)
 import           Data.Foldable       (toList)
 import           Data.List           (sortOn)
 import           Data.Maybe          (mapMaybe, listToMaybe, fromJust)
+import           Data.Tree
 import qualified Data.Map            as M
 import qualified Data.Set            as S
-
-data Tree = Tree { _tParent :: String
-                 , _tWeight :: Int
-                 , _tLeaves :: [Tree]
-                 }
-          deriving Show
-
-type Report = M.Map String (Int, S.Set String)
-
-totalWeight :: Tree -> Int
-totalWeight (Tree _ w ts) = w + sum (totalWeight <$> ts)
 
 parseLine :: String -> (String, (Int, S.Set String))
 parseLine (words->p:w:ws) =
     (p, (read w, S.fromList (filter isAlpha <$> drop 1 ws)))
 parseLine _ = error "No parse"
 
-buildTree :: Report -> Tree
-buildTree m = go root
+-- | Returns the root label and the tree
+buildTree
+    :: M.Map String (Int, S.Set String)
+    -> (String, Tree Int)
+buildTree m = (root, go root)
   where
     allChildren :: S.Set String
     allChildren = S.unions (snd <$> toList m)
     root :: String
     root = S.findMax $ M.keysSet m `S.difference` allChildren
-    go :: String -> Tree
-    go p = Tree p w (go <$> S.toList cs)
+    go :: String -> Tree Int
+    go p = Node w (go <$> S.toList cs)
       where
         (w, cs) = m M.! p
 
 -- | Check if any children are bad; otherwise, check yourself
-findBad :: Tree -> Maybe Int
-findBad (Tree _ _ ts) = listToMaybe badChildren <|> anomaly
+findBad :: Tree Int -> Maybe Int
+findBad t0 = listToMaybe badChildren <|> anomaly
   where
     badChildren :: [Int]
-    badChildren = mapMaybe findBad ts
+    badChildren = mapMaybe findBad $ subForest t0
     weightMap :: M.Map Int [Int]
     weightMap = M.fromListWith (++)
-              . map (\t -> (totalWeight t, [_tWeight t]))
+              . map (\t -> (totalWeight t, [rootLabel t]))
               . toList
-              $ ts
+              $ subForest t0
     anomaly :: Maybe Int
     anomaly = case sortOn (length . snd) (M.toList weightMap) of
       -- end of the line
@@ -61,12 +54,14 @@ findBad (Tree _ _ ts) = listToMaybe badChildren <|> anomaly
       [(wTot1, [w]),(wTot2,_)] -> Just (w + (wTot2 - wTot1))
       -- should not happen
       _                        -> error "More than one anomaly for node"
+    totalWeight :: Tree Int -> Int
+    totalWeight = foldTree $ \x xs -> x + sum xs
 
-parse :: String -> Tree
+parse :: String -> (String, Tree Int)
 parse = buildTree . M.fromList . map parseLine . lines
 
 day07a :: Challenge
-day07a = _tParent . parse
+day07a = fst . parse
 
 day07b :: Challenge
-day07b = show . fromJust . findBad . parse
+day07b = show . fromJust . findBad . snd . parse
