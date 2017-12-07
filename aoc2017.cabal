@@ -44,11 +44,13 @@ executable aoc2017
                      , aoc2017
                      , containers
                      , criterion
+                     , curl
                      , deepseq
                      , filepath
                      , finite-typelits
                      , optparse-applicative
                      , text
+                     , transformers
   default-language:    Haskell2010
 
 test-suite aoc2017-test

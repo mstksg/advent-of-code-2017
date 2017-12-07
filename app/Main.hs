@@ -9,21 +9,25 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Exception
 import           Control.Monad
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Except
 import           Criterion
 import           Data.Char
 import           Data.Finite
+import           Data.Foldable
 import           Data.List
 import           Data.Maybe
 import           Data.Semigroup
+import           Network.Curl
 import           Options.Applicative
 import           System.FilePath
 import           System.IO.Error
 import           Text.Printf
 import           Text.Read
-import qualified Data.IntMap         as IM
-import qualified Data.Map            as M
-import qualified Data.Text           as T
-import qualified System.Console.ANSI as ANSI
+import qualified Data.IntMap                as IM
+import qualified Data.Map                   as M
+import qualified Data.Text                  as T
+import qualified System.Console.ANSI        as ANSI
 
 data TestSpec = TSAll
               | TSDayAll  { _tsDay  :: Finite 25 }
@@ -35,9 +39,10 @@ data TestSpec = TSAll
 data Opts = O { _oTestSpec :: TestSpec
               , _oTests    :: Bool
               , _oBench    :: Bool
+              , _oSession  :: Maybe String
               }
 
-data ChallengeData = CD { _cdInp   :: !(Either FilePath String)
+data ChallengeData = CD { _cdInp   :: !(Either [String] String)
                         , _cdAns   :: !(Maybe String)
                         , _cdTests :: ![(String, Maybe String)]
                         }
@@ -78,10 +83,10 @@ main = do
             return $ IM.singleton d (M.singleton p c)
     case toRun of
       Left e  -> putStrLn e
-      Right cs -> flip runAll cs $ \c CD{..} -> do
+      Right cs -> flip (runAll _oSession) cs $ \c CD{..} -> do
         case _cdInp of
-          Left fn | not _oTests || _oBench ->
-            printf "[ERROR] Puzzle input file %s not found\n" fn
+          Left err | not _oTests || _oBench ->
+            putStrLn $ "[ERROR]: " ++ intercalate "; " err
           _ ->
             return ()
         when _oTests $ do
@@ -102,22 +107,37 @@ main = do
           benchmark (nf c inp)
 
 runAll
-    :: (Challenge -> ChallengeData -> IO ())
+    :: Maybe String
+    -> (Challenge -> ChallengeData -> IO ())
     -> IM.IntMap (M.Map Char Challenge)
     -> IO ()
-runAll f = fmap void          $
-           IM.traverseWithKey $ \d ->
-           M.traverseWithKey  $ \p c -> do
+runAll sess f = fmap void          $
+                IM.traverseWithKey $ \d ->
+                M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
     f c =<< getData d p
   where
     getData :: Int -> Char -> IO ChallengeData
     getData d p = do
-        inp   <- maybe (Left inpFn) Right <$> readFileMaybe inpFn
+        inp   <- runExceptT . asum $
+          [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe inpFn
+          , fetchInput
+          ]
         ans   <- readFileMaybe ansFn
         ts    <- foldMap (parseTests . lines) <$> readFileMaybe testsFn
         return $ CD inp ans ts
       where
+        fileErr :: String
+        fileErr = printf "Input file not found at %s" inpFn
+        fetchInput :: ExceptT [String] IO String
+        fetchInput = do
+          s <- maybe (throwE ["Session key needed to fetch input"]) return
+              sess
+          (_, r) <- liftIO . withCurlDo . curlGetString dataUrl $
+              CurlCookie (printf "session=%s" s) : method_GET
+          liftIO $ writeFile inpFn r
+          return r
+        dataUrl = printf "http://adventofcode.com/2017/day/%d/input" d
         inpFn   = "data"     </> printf "%02d" d <.> "txt"
         ansFn   = "data/ans" </> printf "%02d%c" d p <.> "txt"
         testsFn = "test-data" </> printf "%02d%c" d p <.> "txt"
@@ -176,11 +196,16 @@ parseOpts = do
     b <- switch $ long "bench"
                <> short 'b'
                <> help "Run benchmarks"
+    s <- optional $ strOption ( long "session"
+                             <> short 's'
+                             <> metavar "TOKEN"
+                             <> help "Session cookie token for fetching inputs"
+                              )
     pure $ case d of
       Just d' -> case p of
-        Just p' -> O (TSDayPart d' p') t b
-        Nothing -> O (TSDayAll  d') t b
-      Nothing -> O TSAll t b
+        Just p' -> O (TSDayPart d' p') t b s
+        Nothing -> O (TSDayAll  d') t b s
+      Nothing -> O TSAll t b s
   where
     pFin = eitherReader $ \s -> do
         n <- maybe (Left "Invalid day") Right $ readMaybe s
