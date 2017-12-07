@@ -605,6 +605,11 @@ day07a :: M.Map String (Int, S.Set String) -> String
 day07a = fst . buildTree
 ```
 
+One nice thing about using a tree is that we can actually visualize it using
+`drawTree :: Tree String -> String` from *containers*!  It's kind of big though
+so it's difficult to inspect for our actual input, but it's nice for being able
+to check the sample input.
+
 ### Part 2
 
 Time to find the bad node.
