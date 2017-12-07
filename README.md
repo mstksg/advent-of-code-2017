@@ -9,7 +9,7 @@ Advent of Code 2017
 [Reflections]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
 
 I try to reflect on every day's puzzle, attempting to describe my thought
-processes and how my solutions all work.
+processes and how my solutions all work.  Benchmarks also included.
 
 *   **[Day 1][]** *([code][d1c])*
 *   **[Day 2][]** *([code][d2c])*
@@ -119,6 +119,13 @@ This should only work if you're running `aoc2017` in the project directory.
 **To run on actual inputs**, the executable expects inputs to be found in the
 folder `data/XX.txt` in the directory you are running in.  That is, the input
 for Day 7 will be expected at `data/07.txt`.
+
+*aoc2017 will download missing input files*, but requires a session token.
+This can be provided in `aoc2017-conf.yaml`:
+
+```yaml
+session:  [[ session token goes here ]]
+```
 
 To aid in regression testing, the executable will also automatically verify
 that your current answers match the ones that have been previously submitted

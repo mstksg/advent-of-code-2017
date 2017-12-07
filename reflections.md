@@ -45,6 +45,24 @@ Note that we do need to "double count" for Part 2.
 We could parse the actual strings into `[Int]` by just using
 `map digitToInt :: String -> [Int]`
 
+```
+>> Day 01a
+benchmarking...
+time                 59.08 μs   (56.52 μs .. 61.98 μs)
+                     0.981 R²   (0.971 R² .. 0.991 R²)
+mean                 61.41 μs   (57.81 μs .. 69.65 μs)
+std dev              17.28 μs   (7.177 μs .. 28.41 μs)
+variance introduced by outliers: 97% (severely inflated)
+
+>> Day 01b
+benchmarking...
+time                 93.48 μs   (88.50 μs .. 98.63 μs)
+                     0.979 R²   (0.969 R² .. 0.992 R²)
+mean                 90.52 μs   (87.72 μs .. 94.51 μs)
+std dev              10.30 μs   (6.708 μs .. 14.16 μs)
+variance introduced by outliers: 86% (severely inflated)
+```
+
 Day 2
 -----
 
@@ -90,6 +108,24 @@ Our result is `d`, the result of the perfect division.
 Parsing is pretty straightforward again; we can use `map (map read . words) .
 lines :: String -> [[Int]]` to split by lines, then by words, and `read` every
 word.
+
+```
+>> Day 02a
+benchmarking...
+time                 701.8 μs   (671.5 μs .. 741.4 μs)
+                     0.982 R²   (0.961 R² .. 0.996 R²)
+mean                 687.1 μs   (670.0 μs .. 721.0 μs)
+std dev              80.53 μs   (50.15 μs .. 132.3 μs)
+variance introduced by outliers: 81% (severely inflated)
+
+>> Day 02b
+benchmarking...
+time                 775.4 μs   (742.7 μs .. 822.8 μs)
+                     0.974 R²   (0.947 R² .. 0.996 R²)
+mean                 769.2 μs   (746.3 μs .. 818.0 μs)
+std dev              107.1 μs   (49.91 μs .. 186.3 μs)
+variance introduced by outliers: 85% (severely inflated)
+```
 
 Day 3
 -----
@@ -212,6 +248,24 @@ day03b :: Int -> Int
 day03b i = fromJust $ find (> i) cellNums
 ```
 
+```
+>> Day 03a
+benchmarking...
+time                 2.706 ms   (2.640 ms .. 2.751 ms)
+                     0.997 R²   (0.995 R² .. 0.999 R²)
+mean                 2.186 ms   (2.090 ms .. 2.267 ms)
+std dev              231.4 μs   (198.3 μs .. 267.7 μs)
+variance introduced by outliers: 66% (severely inflated)
+
+>> Day 03b
+benchmarking...
+time                 2.999 μs   (2.639 μs .. 3.438 μs)
+                     0.870 R²   (0.831 R² .. 0.935 R²)
+mean                 3.684 μs   (2.945 μs .. 4.457 μs)
+std dev              1.629 μs   (1.190 μs .. 2.117 μs)
+variance introduced by outliers: 99% (severely inflated)
+```
+
 Day 4
 -----
 
@@ -244,6 +298,24 @@ not worth it to optimize!
 
 (We can parse the input into a list of list of strings using
 `map words . lines :: String -> [[String]]`)
+
+```
+>> Day 04a
+benchmarking...
+time                 1.786 ms   (1.726 ms .. 1.858 ms)
+                     0.990 R²   (0.984 R² .. 0.995 R²)
+mean                 1.776 ms   (1.738 ms .. 1.877 ms)
+std dev              193.2 μs   (98.00 μs .. 356.9 μs)
+variance introduced by outliers: 73% (severely inflated)
+
+>> Day 04b
+benchmarking...
+time                 3.979 ms   (3.431 ms .. 4.421 ms)
+                     0.912 R²   (0.852 R² .. 0.974 R²)
+mean                 3.499 ms   (3.349 ms .. 3.805 ms)
+std dev              703.5 μs   (475.7 μs .. 1.026 ms)
+variance introduced by outliers: 88% (severely inflated)
+```
 
 Day 5
 -----
@@ -334,3 +406,63 @@ parse _                      = error "Expected at least one line"
 
 Parsing the words in the line, and setting up a `Tape` focused on the far left
 item.
+
+```
+>> Day 05a
+benchmarking...
+time                 514.3 ms   (417.9 ms .. 608.1 ms)
+                     0.995 R²   (0.983 R² .. 1.000 R²)
+mean                 479.1 ms   (451.4 ms .. 496.5 ms)
+std dev              26.27 ms   (0.0 s .. 30.17 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+>> Day 05b
+benchmarking...
+time                 1.196 s    (1.164 s .. 1.265 s)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 1.211 s    (1.197 s .. 1.221 s)
+std dev              15.45 ms   (0.0 s .. 17.62 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 6
+-----
+
+```
+>> Day 06a
+benchmarking...
+time                 735.3 ms   (696.4 ms .. NaN s)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 698.6 ms   (688.9 ms .. 707.4 ms)
+std dev              14.59 ms   (0.0 s .. 15.25 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+>> Day 06b
+benchmarking...
+time                 622.8 ms   (556.6 ms .. 777.0 ms)
+                     0.993 R²   (0.987 R² .. 1.000 R²)
+mean                 685.0 ms   (658.1 ms .. 701.9 ms)
+std dev              25.50 ms   (0.0 s .. 29.30 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 7
+-----
+
+```
+>> Day 07a
+benchmarking...
+time                 8.562 ms   (7.067 ms .. 9.751 ms)
+                     0.858 R²   (0.654 R² .. 0.961 R²)
+mean                 9.634 ms   (8.727 ms .. 11.72 ms)
+std dev              3.496 ms   (1.340 ms .. 5.820 ms)
+variance introduced by outliers: 96% (severely inflated)
+
+>> Day 07b
+benchmarking...
+time                 12.65 ms   (11.70 ms .. 13.86 ms)
+                     0.953 R²   (0.899 R² .. 0.991 R²)
+mean                 12.44 ms   (12.03 ms .. 13.30 ms)
+std dev              1.409 ms   (1.024 ms .. 2.120 ms)
+variance introduced by outliers: 58% (severely inflated)
+```
