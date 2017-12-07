@@ -3,10 +3,10 @@ Advent of Code 2017
 
 **Warning: Spoilers**
 
-[Reflections][] and Benchmarks
-------------------------------
+[Reflections and Benchmarks][RnB]
+---------------------------------
 
-[Reflections]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
+[RnB]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
 
 I try to reflect on every day's puzzle, attempting to describe my thought
 processes and how my solutions all work.  Benchmarks also included.
