@@ -162,8 +162,8 @@ Part 1 is then just getting the `nth` item in `ulam`, and calculating its
 distance from the center:
 
 ```haskell
-day03a :: Challenge
-day03a (read->i) = show . norm $ ulam !! (i - 1)
+day03a :: Int -> Int
+day03a i = norm $ ulam !! (i - 1)
   where
     norm (Sum x, Sum y) = abs x + abs y
 ```
@@ -208,6 +208,129 @@ And so part 2 is just finding the first item matching some predicate, which is
 just `find` from *base*:
 
 ```haskell
-day03b :: Challenge
-day03b (read->i) = show . fromJust $ find (> i) cellNums
+day03b :: Int -> Int
+day03b i = fromJust $ find (> i) cellNums
 ```
+
+Day 4
+-----
+
+Day 4 is very basic stream processing.  Just filter for lines that have "all
+unique" items, and count how many lines are remaining.
+
+Part 1 and Part 2 are basically the same, except Part 2 checks for uniqueness
+up to ordering of letters.  If we sort the letters in each word first, this
+normalizes all of the words so we can just use `==`.
+
+```haskell
+day04a :: [[String]] -> Int
+day04a = length . filter uniq
+
+day04b :: [[String]] -> Int
+day04b = length . filter uniq . (map . map) sort
+```
+
+All that's left is finding a function to tell us if all of the items in a list
+are unique.
+
+```haskell
+uniq :: Eq a => [a] -> Bool
+uniq xs = length xs == length (nub xs)
+```
+
+There are definitely ways of doing this that scale better, but given that all
+of the lines in my puzzle input are less than a dozen words long, it's really
+not worth it to optimize!
+
+(We can parse the input into a list of list of strings using
+`map words . lines :: String -> [[String]]`)
+
+Day 5
+-----
+
+Day 5 centers around the `Tape` zipper:
+
+```haskell
+data Tape a = Tape { _tLefts  :: [a]
+                   , _tFocus  :: a
+                   , _tRights :: [a]
+                   }
+  deriving Show
+```
+
+We have the "focus" (the current pointer position), the items to the left of
+the focus (in reverse order, starting from the item closest to the focus), and
+the items to the right of the focus.
+
+Tape is neat because moving one step to the left or right is O(1).  It's also
+"type-safe" in our situation, unlike an `IntMap`, because it enforces a solid
+unbroken tape space.
+
+One fundamental operation on a tape is `move`, which moves the focus on a tape
+to the left or right by an `Int` offset.  If we ever reach the end of the list,
+it's `Nothing`.
+
+```haskell
+-- | `move n` is O(n)
+move :: Int -> Tape Int -> Maybe (Tape Int)
+move n (Tape ls x rs) = case compare n 0 of
+    LT -> case ls of
+      []    -> Nothing
+      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
+    EQ -> Just (Tape ls x rs)
+    GT -> case rs of
+      []    -> Nothing
+      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
+```
+
+Now we just need to simulate the machine in the puzzle:
+
+```haskell
+step
+    :: (Int -> Int)         -- ^ cell update function
+    -> Tape Int
+    -> Maybe (Tape Int)
+step f (Tape ls x rs) = move x (Tape ls (f x) rs)
+```
+
+At every step, move based on the item at the list focus, and update that item
+accordingly.
+
+We can write a quick utility function to continually apply a `a -> Maybe a`
+until we hit a `Nothing`:
+
+```haskell
+iterateMaybe :: (a -> Maybe a) -> a -> [a]
+iterateMaybe f x0 = x0 : unfoldr (fmap dup . f) x0
+  where
+    dup x = (x,x)
+```
+
+And now we have our solutions.  Part 1 and Part 2 are pretty much the same,
+except for different updating functions.
+
+```haskell
+day05a :: Tape Int -> Int
+day05a = length . iterateMaybe (step update)
+  where
+    update x = x + 1
+
+day05b :: Tape Int -> Int
+day05b = length . iterateMaybe (step update)
+  where
+    update x
+      | x >= 3    = x - 1
+      | otherwise = x + 1
+```
+
+Note that we do have to parse our `Tape` from an input string.  We can do this
+using something like:
+
+```haskell
+parse :: String -> Tape Int
+parse (map read.lines->x:xs) = Tape [] x xs
+parse _                      = error "Expected at least one line"
+```
+
+Parsing the words in the line, and setting up a `Tape` focused on the far left
+item.

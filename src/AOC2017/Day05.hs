@@ -34,17 +34,17 @@ parse (map read.lines->x:xs) = Tape [] x xs
 parse _                      = error "Expected at least one line"
 
 day05a :: Challenge
-day05a = show . length . unfold_ (step succ  ) . parse
+day05a = show . length . iterateMaybe (step succ  ) . parse
 
 day05b :: Challenge
-day05b = show . length . unfold_ (step update) . parse
+day05b = show . length . iterateMaybe (step update) . parse
   where
     update x
       | x >= 3    = x - 1
       | otherwise = x + 1
 
-unfold_ :: (a -> Maybe a) -> a -> [a]
-unfold_ f x0 = x0 : unfoldr (fmap dup . f) x0
+iterateMaybe :: (a -> Maybe a) -> a -> [a]
+iterateMaybe f x0 = x0 : unfoldr (fmap dup . f) x0
   where
     dup x = (x,x)
 
