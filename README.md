@@ -11,21 +11,21 @@ Advent of Code 2017
 I try to reflect on every day's puzzle, attempting to describe my thought
 processes and how my solutions all work.  Benchmarks also included.
 
-*   **[Day 1 Reflections][]** *([code][d1c])* *([benchmarks][d1b])*
-*   **[Day 2 Reflections][]** *([code][d2c])* *([benchmarks][d1b])*
-*   **[Day 3 Reflections][]** *([code][d3c])* *([benchmarks][d1b])*
-*   **[Day 4 Reflections][]** *([code][d4c])* *([benchmarks][d1b])*
-*   **[Day 5 Reflections][]** *([code][d5c])* *([benchmarks][d1b])*
-*   **[Day 6 Reflections][]** *([code][d6c])* *([benchmarks][d1b])*
-*   **[Day 7 Reflections][]** *([code][d7c])* *([benchmarks][d1b])*
+*   **[Day 1 Reflections][d1r]** *([code][d1c])* *([benchmarks][d1b])*
+*   **[Day 2 Reflections][d2r]** *([code][d2c])* *([benchmarks][d1b])*
+*   **[Day 3 Reflections][d3r]** *([code][d3c])* *([benchmarks][d1b])*
+*   **[Day 4 Reflections][d4r]** *([code][d4c])* *([benchmarks][d1b])*
+*   **[Day 5 Reflections][d5r]** *([code][d5c])* *([benchmarks][d1b])*
+*   **[Day 6 Reflections][d6r]** *([code][d6c])* *([benchmarks][d1b])*
+*   **[Day 7 Reflections][d7r]** *([code][d7c])* *([benchmarks][d1b])*
 
-[Day 1]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
-[Day 2]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
-[Day 3]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-3
-[Day 4]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-4
-[Day 5]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-5
-[Day 6]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-6
-[Day 7]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-7
+[d1r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
+[d2r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
+[d3r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-3
+[d4r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-4
+[d5r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-5
+[d6r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-6
+[d7r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-7
 
 [d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day01.hs
 [d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day02.hs
