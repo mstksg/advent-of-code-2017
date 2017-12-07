@@ -4,11 +4,11 @@
 module AOC2017.Day07 (day07a, day07b) where
 
 import           AOC2017.Types       (Challenge)
-import           Control.Applicative
-import           Data.Char
-import           Data.Foldable
-import           Data.List
-import           Data.Maybe (mapMaybe, listToMaybe, fromJust)
+import           Control.Applicative ((<|>))
+import           Data.Char           (isAlpha)
+import           Data.Foldable       (toList)
+import           Data.List           (sortOn)
+import           Data.Maybe          (mapMaybe, listToMaybe, fromJust)
 import qualified Data.Map            as M
 import qualified Data.Set            as S
 
@@ -18,6 +18,8 @@ data Tree = Tree { _tParent :: String
                  }
           deriving Show
 
+type Report = M.Map String (Int, S.Set String)
+
 totalWeight :: Tree -> Int
 totalWeight (Tree _ w ts) = w + sum (totalWeight <$> ts)
 
@@ -26,28 +28,31 @@ parseLine (words->p:w:ws) =
     (p, (read w, S.fromList (filter isAlpha <$> drop 1 ws)))
 parseLine _ = error "No parse"
 
-findRoot :: M.Map String (a, S.Set String) -> String
-findRoot m = S.findMax $ M.keysSet m `S.difference` allChildren
-  where
-    allChildren = S.unions (snd <$> toList m)
-
-buildTree :: M.Map String (Int, S.Set String) -> Tree
-buildTree m = go (findRoot m)
+buildTree :: Report -> Tree
+buildTree m = go root
   where
     go :: String -> Tree
     go p = Tree p w (go <$> S.toList cs)
       where
         (w, cs) = m M.! p
+    root :: String
+    root = S.findMax $
+        M.keysSet m `S.difference` allChildren
+      where
+        allChildren = S.unions (snd <$> toList m)
 
 -- | Check if any children are bad; otherwise, check yourself
 findBad :: Tree -> Maybe Int
 findBad (Tree _ _ ts) = listToMaybe badChildren <|> anomaly
   where
+    badChildren :: [Int]
     badChildren = mapMaybe findBad ts
+    weightMap :: M.Map Int [Int]
     weightMap = M.fromListWith (++)
               . map (\t -> (totalWeight t, [_tWeight t]))
               . toList
               $ ts
+    anomaly :: Maybe Int
     anomaly = case sortOn (length . snd) (M.toList weightMap) of
       -- end of the line
       []                       -> Nothing
