@@ -3,16 +3,37 @@ Advent of Code 2017
 
 **Warning: Spoilers**
 
-Reflections
------------
+[Reflections][]
+---------------
 
-Check out [my reflections][] page where I go over all of my solutions.
+[Reflections]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
 
-[my reflections]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
+I try to reflect on every day's puzzle, attempting to describe my thought
+processes and how my solutions all work.
 
-Actual solution source files are in the [src/AOC2017][sols] directory.
+*   **[Day 1][]** *([code][d1c])*
+*   **[Day 2][]** *([code][d2c])*
+*   **[Day 3][]** *([code][d3c])*
+*   **[Day 4][]** *([code][d4c])*
+*   **[Day 5][]** *([code][d5c])*
+*   **[Day 6][]** *([code][d6c])*
+*   **[Day 7][]** *([code][d7c])*
 
-[sols]: https://github.com/mstksg/advent-of-code-2017/tree/master/src/AOC2017
+[Day 1]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
+[Day 2]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
+[Day 3]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-3
+[Day 4]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-4
+[Day 5]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-5
+[Day 6]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-6
+[Day 7]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-7
+
+[d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day01.hs
+[d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day02.hs
+[d3c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day03.hs
+[d4c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day04.hs
+[d5c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day05.hs
+[d6c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day06.hs
+[d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day07.hs
 
 Executable
 ----------
