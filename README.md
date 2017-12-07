@@ -11,13 +11,13 @@ Advent of Code 2017
 I try to reflect on every day's puzzle, attempting to describe my thought
 processes and how my solutions all work.  Benchmarks also included.
 
-*   **[Day 1][]** *([code][d1c])*
-*   **[Day 2][]** *([code][d2c])*
-*   **[Day 3][]** *([code][d3c])*
-*   **[Day 4][]** *([code][d4c])*
-*   **[Day 5][]** *([code][d5c])*
-*   **[Day 6][]** *([code][d6c])*
-*   **[Day 7][]** *([code][d7c])*
+*   **[Day 1][]** *([code][d1c])* *([benchmarks][d1b])*
+*   **[Day 2][]** *([code][d2c])* *([benchmarks][d1b])*
+*   **[Day 3][]** *([code][d3c])* *([benchmarks][d1b])*
+*   **[Day 4][]** *([code][d4c])* *([benchmarks][d1b])*
+*   **[Day 5][]** *([code][d5c])* *([benchmarks][d1b])*
+*   **[Day 6][]** *([code][d6c])* *([benchmarks][d1b])*
+*   **[Day 7][]** *([code][d7c])* *([benchmarks][d1b])*
 
 [Day 1]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
 [Day 2]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
@@ -34,6 +34,14 @@ processes and how my solutions all work.  Benchmarks also included.
 [d5c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day05.hs
 [d6c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day06.hs
 [d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day07.hs
+
+[d1b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1-benchmarks
+[d2b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2-benchmarks
+[d3b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-3-benchmarks
+[d4b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-4-benchmarks
+[d5b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-5-benchmarks
+[d6b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-6-benchmarks
+[d7b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-7-benchmarks
 
 Executable
 ----------

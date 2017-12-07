@@ -45,7 +45,7 @@ Note that we do need to "double count" for Part 2.
 We could parse the actual strings into `[Int]` by just using
 `map digitToInt :: String -> [Int]`
 
-### Benchmarks
+### Day 1 Benchmarks
 
 ```
 >> Day 01a
@@ -111,7 +111,7 @@ Parsing is pretty straightforward again; we can use `map (map read . words) .
 lines :: String -> [[Int]]` to split by lines, then by words, and `read` every
 word.
 
-### Benchmarks
+### Day 2 Benchmarks
 
 ```
 >> Day 02a
@@ -252,7 +252,7 @@ day03b :: Int -> Int
 day03b i = fromJust $ find (> i) cellNums
 ```
 
-### Benchmarks
+### Day 3 Benchmarks
 
 ```
 >> Day 03a
@@ -305,7 +305,7 @@ not worth it to optimize!
 (We can parse the input into a list of list of strings using
 `map words . lines :: String -> [[String]]`)
 
-### Benchmarks
+### Day 4 Benchmarks
 ```
 >> Day 04a
 benchmarking...
@@ -414,7 +414,7 @@ parse _                      = error "Expected at least one line"
 Parsing the words in the line, and setting up a `Tape` focused on the far left
 item.
 
-### Benchmarks
+### Day 5 Benchmarks
 
 ```
 >> Day 05a
@@ -515,7 +515,7 @@ Part 1 is the `fst` of that, and Part 2 is the `snd` of that.
 We can parse the input using `V.fromList . map read . words :: String ->
 V.Vector Int`.
 
-### Benchmarks
+### Day 6 Benchmarks
 
 ```
 >> Day 06a
@@ -538,7 +538,7 @@ variance introduced by outliers: 19% (moderately inflated)
 Day 7
 -----
 
-### Benchmarks
+### Day 7 Benchmarks
 
 ```
 >> Day 07a
