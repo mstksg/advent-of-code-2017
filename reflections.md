@@ -45,6 +45,8 @@ Note that we do need to "double count" for Part 2.
 We could parse the actual strings into `[Int]` by just using
 `map digitToInt :: String -> [Int]`
 
+### Benchmarks
+
 ```
 >> Day 01a
 benchmarking...
@@ -108,6 +110,8 @@ Our result is `d`, the result of the perfect division.
 Parsing is pretty straightforward again; we can use `map (map read . words) .
 lines :: String -> [[Int]]` to split by lines, then by words, and `read` every
 word.
+
+### Benchmarks
 
 ```
 >> Day 02a
@@ -248,6 +252,8 @@ day03b :: Int -> Int
 day03b i = fromJust $ find (> i) cellNums
 ```
 
+### Benchmarks
+
 ```
 >> Day 03a
 benchmarking...
@@ -299,6 +305,7 @@ not worth it to optimize!
 (We can parse the input into a list of list of strings using
 `map words . lines :: String -> [[String]]`)
 
+### Benchmarks
 ```
 >> Day 04a
 benchmarking...
@@ -407,6 +414,8 @@ parse _                      = error "Expected at least one line"
 Parsing the words in the line, and setting up a `Tape` focused on the far left
 item.
 
+### Benchmarks
+
 ```
 >> Day 05a
 benchmarking...
@@ -428,6 +437,86 @@ variance introduced by outliers: 19% (moderately inflated)
 Day 6
 -----
 
+Day 6 is yet another simulation of a virtual machine.  There might be an
+analytic way to do things, but input size is small enough that you can just
+directly simulate the machine in a reasonable time.
+
+### Step
+
+At the most basic level, we need to write a function to advance the simulation
+one step in time:
+
+```haskell
+step :: V.Vector Int -> V.Vector Int
+step v = V.accum (+) v' ((,1) <$> indices)
+  where
+    maxIx     = V.maxIndex v
+    numBlocks = v V.! maxIx
+    v'        = v V.// [(maxIx, 0)]
+    indices   = (`mod` V.length v) <$> [maxIx + 1 .. maxIx + numBlocks]
+```
+
+`V.accum (+) v' ((,1) <$> indices)` will increment all indices in `indices` in
+the vector by 1 -- potentially more than once times if it shows up in `indices`
+multiple times.  For example, if `indices` is `[4,7,1,2,4]` will increment the
+numbers at indices 4, 7, 1, 2, and 4 again (so the number at position 4 will be
+incremented twice).
+
+All that's left is generating `indices`.  We know we need an entry for every
+place we want to "drop a block".  We get the starting index using `V.maxIndex`,
+and so get the number of blocks to drop using `v V.! maxIx`.  Our list of
+indices is just `[maxIx + 1 .. maxIx + numBlocks]`, but all `mod`'d by by the
+size of `v` so we cycle through the indices.
+
+We must remember to re-set the starting position's value to `0` before we
+start.
+
+
+### Loop
+
+We can now just `iterate step :: [V.Vector Int]`, which just contains an
+infinite list of steps.  We want to now find the loops.
+
+To do this, we can scan across `iterate step`.  We keep track of a `m :: Map a
+Int`, which stores all of the previously seen states (as keys), along with *how
+long ago* they were seen. We also keep track of the number of steps we have
+taken so far (`n`)
+
+```haskell
+findLoop :: Ord a => [a] -> (Int, Int)
+findLoop = go 0 M.empty
+  where
+    go _ _ []     = error "We expect an infinite list"
+    go n m (x:xs) = case M.lookup x m of
+        Just l  -> (n, l)
+        Nothing -> go (n + 1) (M.insert x 1 m') xs
+      where
+        m' = succ <$> m
+```
+
+At every step, if the `Map` *does* include the previously seen state as a key,
+then we're done.  We return the associated value (how long ago it was seen) and
+the number of steps we have taken so far.
+
+Otherwise, insert the new state into the `Map`, update all of the old
+"last-time-seen" values (by fmapping `succ`), and move on.
+
+### All Together
+
+We have our whole challenge:
+
+```haskell
+day06 :: V.Vector Int -> (Int, Int)
+day06 = findLoop . iterate step
+```
+
+Part 1 is the `fst` of that, and Part 2 is the `snd` of that.
+
+We can parse the input using `V.fromList . map read . words :: String ->
+V.Vector Int`.
+
+### Benchmarks
+
 ```
 >> Day 06a
 benchmarking...
@@ -448,6 +537,8 @@ variance introduced by outliers: 19% (moderately inflated)
 
 Day 7
 -----
+
+### Benchmarks
 
 ```
 >> Day 07a

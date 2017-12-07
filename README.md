@@ -3,8 +3,8 @@ Advent of Code 2017
 
 **Warning: Spoilers**
 
-[Reflections][]
----------------
+[Reflections][] and Benchmarks
+------------------------------
 
 [Reflections]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md
 
