@@ -12,4 +12,5 @@ import AOC2017.Day04 as AOC
 import AOC2017.Day05 as AOC
 import AOC2017.Day06 as AOC
 import AOC2017.Day07 as AOC
+import AOC2017.Day08 as AOC
 

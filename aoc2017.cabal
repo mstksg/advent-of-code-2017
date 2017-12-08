@@ -28,6 +28,7 @@ library
                        AOC2017.Day05
                        AOC2017.Day06
                        AOC2017.Day07
+                       AOC2017.Day08
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5.10.2
                      , transformers
