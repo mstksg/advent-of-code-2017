@@ -674,7 +674,7 @@ situation where there isn't exactly one odd node)
 
 ```haskell
 day07b :: M.Map String (Int, S.Set String) -> Int
-day07b = findJust . findBad . snd . buildTree
+day07b = fromJust . findBad . snd . buildTree
 ```
 
 ### Parsing
