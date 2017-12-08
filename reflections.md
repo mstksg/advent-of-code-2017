@@ -632,7 +632,6 @@ findBad t0 = listToMaybe badChildren <|> anomaly
     weightMap :: M.Map Int [Int]
     weightMap = M.fromListWith (++)
               . map (\t -> (totalWeight t, [rootLabel t]))
-              . toList
               $ subForest t0
     anomaly :: Maybe Int
     anomaly = case sortOn (length . snd) (M.toList weightMap) of
