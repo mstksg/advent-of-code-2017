@@ -3,9 +3,8 @@
 module AOC2017.Day08 (day08a, day08b) where
 
 import           AOC2017.Types (Challenge)
-import           Control.Monad (guard)
+import           Data.Foldable (toList)
 import           Data.List     (foldl', scanl')
-import           Data.Maybe    (mapMaybe)
 import qualified Data.Map      as M
 
 data Instr = Instr { _iRegister  :: String
@@ -49,9 +48,6 @@ day08a = show . maximum
        . parse
 
 day08b :: Challenge
-day08b = show . maximum . mapMaybe maximum'
+day08b = show . maximum . foldMap toList
        . scanl' step M.empty
        . parse
-
-maximum' :: (Foldable f, Ord a) => f a -> Maybe a
-maximum' xs = maximum xs <$ guard (not (null xs))
