@@ -18,6 +18,19 @@ step m (Instr r u c p)
   | p (M.findWithDefault 0 c m) = M.insertWith (+) r u m
   | otherwise                   = m
 
+parse :: String -> [Instr]
+parse = map parseLine . lines
+
+day08a :: Challenge
+day08a = show . maximum
+       . foldl' step M.empty
+       . parse
+
+day08b :: Challenge
+day08b = show . maximum . foldMap toList
+       . scanl' step M.empty
+       . parse
+
 parseLine :: String -> Instr
 parseLine (words->r:f:u:_:c:o:x:_) =
     Instr { _iRegister  = r
@@ -39,15 +52,3 @@ parseLine (words->r:f:u:_:c:o:x:_) =
       _    -> error "Invalid op"
 parseLine _ = error "No parse"
 
-parse :: String -> [Instr]
-parse = map parseLine . lines
-
-day08a :: Challenge
-day08a = show . maximum
-       . foldl' step M.empty
-       . parse
-
-day08b :: Challenge
-day08b = show . maximum . foldMap toList
-       . scanl' step M.empty
-       . parse

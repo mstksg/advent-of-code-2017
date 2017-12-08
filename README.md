@@ -12,12 +12,13 @@ I try to reflect on every day's puzzle, attempting to describe my thought
 processes and how my solutions all work.  Benchmarks also included.
 
 *   **[Day 1 Reflections][d1r]** *([code][d1c])* *([benchmarks][d1b])*
-*   **[Day 2 Reflections][d2r]** *([code][d2c])* *([benchmarks][d1b])*
-*   **[Day 3 Reflections][d3r]** *([code][d3c])* *([benchmarks][d1b])*
-*   **[Day 4 Reflections][d4r]** *([code][d4c])* *([benchmarks][d1b])*
-*   **[Day 5 Reflections][d5r]** *([code][d5c])* *([benchmarks][d1b])*
-*   **[Day 6 Reflections][d6r]** *([code][d6c])* *([benchmarks][d1b])*
-*   **[Day 7 Reflections][d7r]** *([code][d7c])* *([benchmarks][d1b])*
+*   **[Day 2 Reflections][d2r]** *([code][d2c])* *([benchmarks][d2b])*
+*   **[Day 3 Reflections][d3r]** *([code][d3c])* *([benchmarks][d3b])*
+*   **[Day 4 Reflections][d4r]** *([code][d4c])* *([benchmarks][d4b])*
+*   **[Day 5 Reflections][d5r]** *([code][d5c])* *([benchmarks][d5b])*
+*   **[Day 6 Reflections][d6r]** *([code][d6c])* *([benchmarks][d6b])*
+*   **[Day 7 Reflections][d7r]** *([code][d7c])* *([benchmarks][d7b])*
+*   **[Day 8 Reflections][d8r]** *([code][d8c])* *([benchmarks][d8b])*
 
 [d1r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
 [d2r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
@@ -26,6 +27,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d5r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-5
 [d6r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-6
 [d7r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-7
+[d8r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-8
 
 [d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day01.hs
 [d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day02.hs
@@ -34,6 +36,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d5c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day05.hs
 [d6c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day06.hs
 [d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day07.hs
+[d8c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day08.hs
 
 [d1b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1-benchmarks
 [d2b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2-benchmarks
@@ -42,6 +45,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d5b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-5-benchmarks
 [d6b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-6-benchmarks
 [d7b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-7-benchmarks
+[d8b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-8-benchmarks
 
 Executable
 ----------

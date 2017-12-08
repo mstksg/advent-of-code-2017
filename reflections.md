@@ -495,6 +495,9 @@ size of `v` so we cycle through the indices.
 We must remember to re-set the starting position's value to `0` before we
 start.
 
+Thanks to [glguy][] for the idea to use `accum`!
+
+[glguy]: https://twitter.com/glguy
 
 ### Loop
 
@@ -707,5 +710,148 @@ time                 12.30 ms   (11.36 ms .. 14.21 ms)
 mean                 12.06 ms   (11.55 ms .. 13.00 ms)
 std dev              1.799 ms   (935.1 μs .. 2.877 ms)
 variance introduced by outliers: 69% (severely inflated)
+```
+
+Day 8
+-----
+
+*([code][d8c])*
+
+[d8c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day08.hs
+
+Happy to see that Day 8, like day 7, is another problem that is very suitable
+for Haskell! :)
+
+I decided to make an ADT to encode each instruction
+
+```haskell
+data Instr = Instr { _iRegister  :: String
+                   , _iUpdate    :: Int
+                   , _iCondReg   :: String
+                   , _iPredicate :: Int -> Bool
+                   }
+```
+
+It includes a register to update, an update amount, a register to check for a
+condition, and a predicate to apply to see whether or not to apply an update.
+
+So something like
 
 ```
+b inc 5 if a > 1
+```
+
+would be parsed as
+
+```haskell
+Instr { _iRegister  = "b"
+      , _iUpdate    = 5
+      , _iCondReg   = "a"
+      , _iPredicate = (> 1)
+      }
+```
+
+From this, our updating function `step` is basically following the logic of the
+puzzle's update process:
+
+```haskell
+step :: M.Map String Int -> Instr -> M.Map String Int
+step m (Instr r u c p)
+  | p (M.findWithDefault 0 c m) = M.insertWith (+) r u m
+  | otherwise                   = m
+```
+
+### Part 1
+
+So this makes Part 1 basically a simple `foldl`, to produce the final `Map` of
+all the registers.  Then we use `maximum :: Ord v => Map k v -> v` to get the
+maximum register value.
+
+```haskell
+day08a :: [Instr] -> Int
+day08a = maximum . foldl' step M.empty
+```
+
+Note that this might potentially give the wrong answer if all register values
+in the `Map` are negative.  Then `maximum` of our `Map` would be negative, but
+there are still registers that exist with `0` that aren't in our `Map`.
+
+### Part 2
+
+Part 2 is basically a simple `scanl`.
+
+```haskell
+day08b :: [Instr] -> Int
+day08b = maximum . foldMap toList . scanl' step M.empty
+```
+
+`foldl` gave us the *final* `Map`, but `scanl` gives us *all the intermediate*
+`Map`s that were formed along the way.
+
+We want the maximum value that was ever seen, so we use `foldMap toList :: [Map
+k v] -> [v]` to get a list of all values ever seen, and `maximum` that list.
+There are definitely more efficient ways to do this!  The same caveat
+(situation where all registers are always negative) applies here.
+
+By the way, isn't it neat that switching between Part 1 and Part 2 is just
+switching between `foldl` and `scanl`?  (Observation thanks to [cocreature][])
+Higher order functions and purity are the best!
+
+[cocreature]: https://twitter.com/cocreature
+
+### Parsing
+
+Again, parsing an `Instr` is straightforward but non-trivial.
+
+```haskell
+parseLine :: String -> Instr
+parseLine (words->r:f:u:_:c:o:x:_) =
+    Instr { _iRegister  = r
+          , _iUpdate    = f' (read u)
+          , _iCondReg   = c
+          , _iPredicate = (`op` read x)
+          }
+  where
+    f' = case f of
+      "dec" -> negate
+      _     -> id
+    op = case o of
+      ">"  -> (>)
+      ">=" -> (>=)
+      "<"  -> (<)
+      "<=" -> (<=)
+      "==" -> (==)
+      "!=" -> (/=)
+      _    -> error "Invalid op"
+parseLine _ = error "No parse"
+```
+
+Care has to be taken to ensure that `dec 5`, for instance, is parsed as an
+update of `-5`.
+
+It is interesting to note that -- as a consequence of laziness -- `read u` and
+`f'` might never be evaluated, and `u` and `f` might never be parsed.  This is
+because if the condition is found to be negative for a line, the `_iUpdate`
+field is never used, so we can throw away `u` and `f` without ever evaluating
+them!
+
+### Day 8 Benchmarks
+
+```
+>> Day 08a
+benchmarking...
+time                 8.545 ms   (8.085 ms .. 9.007 ms)
+                     0.984 R²   (0.975 R² .. 0.994 R²)
+mean                 8.609 ms   (8.365 ms .. 9.328 ms)
+std dev              1.068 ms   (432.2 μs .. 2.039 ms)
+variance introduced by outliers: 67% (severely inflated)
+
+>> Day 08b
+benchmarking...
+time                 9.764 ms   (9.185 ms .. 10.44 ms)
+                     0.975 R²   (0.955 R² .. 0.993 R²)
+mean                 9.496 ms   (9.233 ms .. 9.816 ms)
+std dev              846.1 μs   (567.6 μs .. 1.200 ms)
+variance introduced by outliers: 50% (moderately inflated)
+```
+
