@@ -55,25 +55,6 @@ data ChallengeData = CD { _cdInp   :: !(Either [String] String)
 data Config = Cfg { _cfgSession :: Maybe String }
   deriving (Generic)
 
-tests :: IM.IntMap (M.Map Char Challenge)
-tests = IM.fromList [(1, M.fromList [('a', day01a)
-                                    ,('b', day01b)])
-                    ,(2, M.fromList [('a', day02a)
-                                    ,('b', day02b)])
-                    ,(3, M.fromList [('a', day03a)
-                                    ,('b', day03b)])
-                    ,(4, M.fromList [('a', day04a)
-                                    ,('b', day04b)])
-                    ,(5, M.fromList [('a', day05a)
-                                    ,('b', day05b)])
-                    ,(6, M.fromList [('a', day06a)
-                                    ,('b', day06b)])
-                    ,(7, M.fromList [('a', day07a)
-                                    ,('b', day07b)])
-                    ,(8, M.fromList [('a', day08a)
-                                    ,('b', day08b)])
-                    ]
-
 main :: IO ()
 main = do
     O{..} <- execParser $ info (parseOpts <**> helper)
@@ -83,14 +64,14 @@ main = do
                 )
     Cfg{..} <- configFile $ fromMaybe "aoc2017-conf.yaml" _oConfig
     let toRun = case _oTestSpec of
-          TSAll -> Right tests
+          TSAll -> Right challengeMap
           TSDayAll (succ.fromIntegral->d) ->
-            case IM.lookup d tests of
+            case IM.lookup d challengeMap of
               Nothing -> Left  $ printf "Day not yet available: %d" d
               Just cs -> Right $ IM.singleton d cs
           TSDayPart (succ.fromIntegral->d) p -> do
             ps <- maybe (Left $ printf "Day not yet available: %d" d) Right $
-                    IM.lookup d tests
+                    IM.lookup d challengeMap
             c  <- maybe (Left $ printf "Part not found: %c" p) Right $
                     M.lookup p ps
             return $ IM.singleton d (M.singleton p c)

@@ -29,8 +29,10 @@ library
                        AOC2017.Day06
                        AOC2017.Day07
                        AOC2017.Day08
+                       AOC2017.Day09
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5.10.2
+                     , megaparsec
                      , transformers
                      , lens
                      , vector
