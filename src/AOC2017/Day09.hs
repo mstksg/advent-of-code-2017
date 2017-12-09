@@ -3,75 +3,56 @@
 
 module AOC2017.Day09 (day09a, day09b) where
 
-import           AOC2017.Types        (Challenge)
-import           Control.Applicative
+import           AOC2017.Types              (Challenge)
+import           Control.Monad.Trans.Class
+import           Control.Monad.Trans.Writer
 import           Data.Either
-import           Data.Tree
+import           Data.Monoid
 import           Data.Void
-import qualified Text.Megaparsec      as P
-import qualified Text.Megaparsec.Char as P
+import qualified Text.Megaparsec            as P
+import qualified Text.Megaparsec.Char       as P
 
-type Parser = P.Parsec Void String
+data Tree = Garbage
+          | Group [Tree]
 
--- THIS IS JUST WRITERRRRRR
-parse :: Int -> Parser (Tree Int, Int)
-parse n = P.try parseTree <|> ((Node 0 [],) <$> parseGarbage)
+type Parser = P.ParsecT Void String (Writer (Sum Int))
+
+parseTree :: Parser Tree
+parseTree = P.choice [ Group   <$> parseGroup
+                     , Garbage <$  parseGarbage
+                     ]
   where
-    parseTree :: Parser (Tree Int, Int)
-    parseTree = do
-      P.char '{'
-      (ts,ns) <- unzip <$> parse (n + 1) `P.sepBy` P.try (P.char ',')
-      P.char '}'
-      return (Node n ts, sum ns)
-    parseGarbage :: Parser Int
-    parseGarbage = do
-      P.char '<'
-      inGarbage 0
-    inGarbage :: Int -> Parser Int
-    inGarbage n = do
-      c <- P.anyChar
-      case c of
-        '>' -> return n
-        '!' -> P.anyChar *> inGarbage n
-        _   -> inGarbage (n + 1)
+    parseGroup :: Parser [Tree]
+    parseGroup = do
+      _  <- P.char '{'
+      ts <- parseTree `P.sepBy` P.char ','
+      _  <- P.char '}'
+      return ts
+    parseGarbage :: Parser ()
+    parseGarbage = P.char '<' *> inGarbage
+      where
+        inGarbage :: Parser ()
+        inGarbage = do
+          c <- P.anyChar
+          case c of
+            '>' -> return ()
+            '!' -> P.anyChar     *> inGarbage
+            _   -> lift (tell 1) *> inGarbage
 
-treeScore :: Tree Int -> Int
-treeScore = foldTree $ \i ns -> i + sum ns
+treeScore :: Tree -> Int
+treeScore = go 1
+  where
+    go n = \case
+      Garbage  -> 0
+      Group ts -> n + sum (go (n + 1) <$> ts)
 
 day09a :: Challenge
-day09a = either show (show . treeScore . fst) . P.runParser (parse 1) ""
--- day09a = either show (('\n':) . drawTree . fmap show) . P.runParser (parse 1) ""
+day09a = show . treeScore
+       . fromRight undefined . fst . runWriter
+       . P.runParserT parseTree ""
 
 day09b :: Challenge
-day09b = either show (show . snd) . P.runParser (parse 1) ""
-
--- process
---     :: [Char]
---     -> Int
--- process = go 0 False
---   where
---     go :: Int -> Bool -> [Char] -> Int
---     go d True = \case
---       '!':_:xs -> go d True xs
---       '>':xs   -> go d False xs
---       _:xs     -> go d True xs
---     go d False = \case
---       '<':xs -> go d False xs
---       '{':xs -> d + go (d + 1) False xs
---       '}':xs -> go (d - 1) False xs
-
-
--- process
---     :: [Char]
---     -> Tree ()
--- process = Tree () (go False [])
---   where
---     go :: Bool -> [Tree ()] -> [Char] -> [Tree ()]
---     go True ts = \case
---       '!':_:xs -> go True ts xs
---       '>':xs   -> go False ts xs
---       _:xs     -> go True ts xs
---     go False ts = \case
---       '{':xs -> go False
-
+day09b = show . getSum
+       . execWriter
+       . P.runParserT parseTree ""
 
