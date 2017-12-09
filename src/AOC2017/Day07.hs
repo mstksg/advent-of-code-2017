@@ -42,7 +42,7 @@ findBad t0 = listToMaybe badChildren <|> anomaly
     badChildren = mapMaybe findBad $ subForest t0
     weightMap :: M.Map Int [Int]
     weightMap = M.fromListWith (++)
-              . map (\t -> (totalWeight t, [rootLabel t]))
+              . map (\t -> (sum t, [rootLabel t]))
               $ subForest t0
     anomaly :: Maybe Int
     anomaly = case sortOn (length . snd) (M.toList weightMap) of
@@ -54,8 +54,6 @@ findBad t0 = listToMaybe badChildren <|> anomaly
       [(wTot1, [w]),(wTot2,_)] -> Just (w + (wTot2 - wTot1))
       -- should not happen
       _                        -> error "More than one anomaly for node"
-    totalWeight :: Tree Int -> Int
-    totalWeight = foldTree $ \x xs -> x + sum xs
 
 parse :: String -> (String, Tree Int)
 parse = buildTree . M.fromList . map parseLine . lines
