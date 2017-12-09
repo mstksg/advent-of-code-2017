@@ -873,7 +873,7 @@ that only made my attempt a bit more complicated :)
 Anyway, our solution today involves the AST `Tree`:
 
 ```haskell
-data Tree = Garbage Int
+data Tree = Garbage String
           | Group [Tree]
 ```
 
@@ -892,7 +892,7 @@ Getting the total amount of garbage is, as well:
 
 ```haskell
 treeGarbage :: Tree -> Int
-treeGarbage (Garbage n ) = n
+treeGarbage (Garbage n ) = length n
 treeGarbage (Group   ts) = sum (treeGarbage <$> ts)
 ```
 
@@ -908,8 +908,8 @@ day09b = treeGarbage
 
 ### Parsing
 
-Parsing is actually somewhat straightforward.  We can use the *megaparsec*
-library's parser combinators:
+Parsing was simpler than I originally thought it would be.  We can use the
+*megaparsec* library's parser combinators:
 
 ```haskell
 parseTree :: Parser Tree
@@ -919,29 +919,31 @@ parseTree = P.choice [ Group   <$> parseGroup
   where
     parseGroup :: Parser [Tree]
     parseGroup = P.between (P.char '{') (P.char '}') $
-       parseTree `P.sepBy` P.char ','
-    parseGarbage :: Parser Int
-    parseGarbage = P.char '<' *> eatGarbage
+        parseTree `P.sepBy` P.char ','
+    parseGarbage :: Parser String
+    parseGarbage = P.between (P.char '<') (P.char '>') $
+        catMaybes <$> many garbageChar
       where
-        eatGarbage :: Parser Int
-        eatGarbage = P.choice
-          [ P.char '>' $> 0
-          , P.char '!' *> P.anyChar   *> eatGarbage
-          , P.anyChar  *>      (succ <$> eatGarbage)
+        garbageChar :: Parser (Maybe Char)
+        garbageChar = P.choice
+          [ Nothing <$ (P.char '!' *> P.anyChar)
+          , Just    <$> P.noneOf ">"
           ]
 ```
 
-Our final `Tree` is either a `Group` or `Garbage`.  `parseGroup` parses `Tree`s
-separated by `,`, and all between brackets.  `parseGarbage` is the slightly
-trickier one, and I couldn't really figure out a way to do this without
-explicit recursion.
+Our final `Tree` is either a `Group` (parsed with `parseGroup`) or `Garbage`
+(parsed with `parseGarbage`).
 
-Essentially, `parseGarbage` has to consume garbage and return the number of
-garbage characters.  To do this, it parses the opening `<`, and then
-recursively eats items (as one of the three potential things to eat).  If it
-sees `>`, it's done (and returns `0` things eaten).  If it sees `!`, it
-consumes the character after and returns the result of the recursive call.  If
-it sees anything else, it returns the result of the recursive call plus one.
+*   `parseGroup` parses `Tree`s separated by `,`, between curly brackets.
+*   `parseGarbage`  parses many consecutive valid garbage tokens (Which may or
+    may not contain a valid garbage character, `Maybe Char`), between angled
+    brackets.  It `catMaybe`s the contents of all of the tokens to get all
+    actual garbage characters.
+
+    Thanks to [rafl][] for the idea of using `many` and `between` for
+    `parseGarbage` instead of my original explicitly recursive solution!
+
+[rafl]: https://github.com/rafl
 
 And so we have:
 
@@ -958,18 +960,18 @@ We do need to handle the case where the parser doesn't succeed, since
 ```
 >> Day 09a
 benchmarking...
-time                 1.320 ms   (1.173 ms .. 1.533 ms)
-                     0.864 R²   (0.776 R² .. 0.962 R²)
-mean                 1.324 ms   (1.237 ms .. 1.603 ms)
-std dev              475.3 μs   (313.5 μs .. 788.4 μs)
-variance introduced by outliers: 98% (severely inflated)
+time                 2.508 ms   (2.366 ms .. 2.687 ms)
+                     0.957 R²   (0.910 R² .. 0.990 R²)
+mean                 2.589 ms   (2.477 ms .. 3.009 ms)
+std dev              628.2 μs   (223.5 μs .. 1.246 ms)
+variance introduced by outliers: 94% (severely inflated)
 
 >> Day 09b
 benchmarking...
-time                 1.241 ms   (1.135 ms .. 1.344 ms)
-                     0.909 R²   (0.782 R² .. 0.972 R²)
-mean                 1.595 ms   (1.367 ms .. 2.347 ms)
-std dev              1.358 ms   (311.2 μs .. 2.808 ms)
-variance introduced by outliers: 98% (severely inflated)
+time                 3.354 ms   (3.108 ms .. 3.684 ms)
+                     0.952 R²   (0.919 R² .. 0.992 R²)
+mean                 3.196 ms   (3.086 ms .. 3.383 ms)
+std dev              411.1 μs   (232.5 μs .. 595.1 μs)
+variance introduced by outliers: 76% (severely inflated)
 ```
 
