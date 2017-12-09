@@ -854,3 +854,116 @@ std dev              846.1 μs   (567.6 μs .. 1.200 ms)
 variance introduced by outliers: 50% (moderately inflated)
 ```
 
+Day 9
+-----
+
+*([code][d9c])*
+
+[d9c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day09.hs
+
+Today I actually decided to [live stream][d9ls] my leader board attempt!
+Admittedly I was in a new and noisy environment, so adding live streaming to
+that only made my attempt a bit more complicated :)
+
+[d9s]: https://www.twitch.tv/videos/207969022
+
+Anyway, our solution today involves the AST `Tree`:
+
+```haskell
+data Tree = Garbage Int
+          | Group [Tree]
+```
+
+Getting the score is a simple recursive traversal:
+
+```haskell
+treeScore :: Tree -> Int
+treeScore _ (Garbage _ ) = 0
+treeScore n (Group   ts) = n + sum (treeScore (n + 1) <$> ts)
+```
+
+Getting the total amount of garbage is, as well:
+
+```haskell
+treeGarbage :: Tree -> Int
+treeGarbage (Garbage n ) = n
+treeGarbage (Group   ts) = sum (treeGarbage <$> ts)
+```
+
+And so that's essentially our entire solution:
+
+```haskell
+day09a :: Tree -> Int
+day09a = treeScore
+
+day09b :: Tree -> Int
+day09b = treeGarbage
+```
+
+### Parsing
+
+Parsing is actually somewhat straightforward.  We can use the *megaparsec*
+library's parser combinators:
+
+```haskell
+parseTree :: Parser Tree
+parseTree = P.choice [ Group   <$> parseGroup
+                     , Garbage <$> parseGarbage
+                     ]
+  where
+    parseGroup :: Parser [Tree]
+    parseGroup = P.between (P.char '{') (P.char '}') $
+       parseTree `P.sepBy` P.char ','
+    parseGarbage :: Parser Int
+    parseGarbage = P.char '<' *> eatGarbage
+      where
+        eatGarbage :: Parser Int
+        eatGarbage = P.choice
+          [ P.char '>' $> 0
+          , P.char '!' *> P.anyChar   *> eatGarbage
+          , P.anyChar  *>      (succ <$> eatGarbage)
+          ]
+```
+
+Our final `Tree` is either a `Group` or `Garbage`.  `parseGroup` parses `Tree`s
+separated by `,`, and all between brackets.  `parseGarbage` is the slightly
+trickier one, and I couldn't really figure out a way to do this without
+explicit recursion.
+
+Essentially, `parseGarbage` has to consume garbage and return the number of
+garbage characters.  To do this, it parses the opening `<`, and then
+recursively eats items (as one of the three potential things to eat).  If it
+sees `>`, it's done (and returns `0` things eaten).  If it sees `!`, it
+consumes the character after and returns the result of the recursive call.  If
+it sees anything else, it returns the result of the recursive call plus one.
+
+And so we have:
+
+```haskell
+parse :: String -> Tree
+parse = either (error . show) id . P.runParser parseTree ""
+```
+
+We do need to handle the case where the parser doesn't succeed, since
+`runParser` returns an `Either`.
+
+### Day 9 Benchmarks
+
+```
+>> Day 09a
+benchmarking...
+time                 1.320 ms   (1.173 ms .. 1.533 ms)
+                     0.864 R²   (0.776 R² .. 0.962 R²)
+mean                 1.324 ms   (1.237 ms .. 1.603 ms)
+std dev              475.3 μs   (313.5 μs .. 788.4 μs)
+variance introduced by outliers: 98% (severely inflated)
+
+>> Day 09b
+benchmarking...
+time                 1.241 ms   (1.135 ms .. 1.344 ms)
+                     0.909 R²   (0.782 R² .. 0.972 R²)
+mean                 1.595 ms   (1.367 ms .. 2.347 ms)
+std dev              1.358 ms   (311.2 μs .. 2.808 ms)
+variance introduced by outliers: 98% (severely inflated)
+```
+
