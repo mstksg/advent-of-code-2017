@@ -21,7 +21,7 @@ parseTree = P.choice [ Group   <$> parseGroup
   where
     parseGroup :: Parser [Tree]
     parseGroup = P.between (P.char '{') (P.char '}') $
-       parseTree `P.sepBy` P.char ','
+        parseTree `P.sepBy` P.char ','
     parseGarbage :: Parser Int
     parseGarbage = P.char '<' *> eatGarbage
       where
@@ -33,8 +33,11 @@ parseTree = P.choice [ Group   <$> parseGroup
           ]
 
 treeScore :: Tree -> Int
-treeScore _ (Garbage _ ) = 0
-treeScore n (Group   ts) = n + sum (treeScore (n + 1) <$> ts)
+treeScore = go 1
+  where
+    go n = \case
+      Garbage _ -> 0
+      Group ts  -> n + sum (go (n + 1) <$> ts)
 
 treeGarbage :: Tree -> Int
 treeGarbage (Garbage n ) = n

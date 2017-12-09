@@ -861,7 +861,7 @@ Day 9
 
 [d9c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day09.hs
 
-Today I actually decided to [live stream][d9ls] my leader board attempt!
+Today I actually decided to [live stream][d9s] my leader board attempt!
 Admittedly I was in a new and noisy environment, so adding live streaming to
 that only made my attempt a bit more complicated :)
 
@@ -878,8 +878,11 @@ Getting the score is a simple recursive traversal:
 
 ```haskell
 treeScore :: Tree -> Int
-treeScore _ (Garbage _ ) = 0
-treeScore n (Group   ts) = n + sum (treeScore (n + 1) <$> ts)
+treeScore = go 1
+  where
+    go n = \case
+      Garbage _ -> 0
+      Group ts  -> n + sum (go (n + 1) <$> ts)
 ```
 
 Getting the total amount of garbage is, as well:
