@@ -32,12 +32,11 @@ parseTree = P.choice [ Group   <$> parseGroup
     parseGarbage = P.char '<' *> inGarbage
       where
         inGarbage :: Parser ()
-        inGarbage = do
-          c <- P.anyChar
-          case c of
-            '>' -> return ()
-            '!' -> P.anyChar     *> inGarbage
-            _   -> lift (tell 1) *> inGarbage
+        inGarbage = P.choice
+          [ () <$ P.char '>'
+          , P.char '!' *> P.anyChar     *> inGarbage
+          , P.anyChar  *> lift (tell 1) *> inGarbage
+          ]
 
 treeScore :: Tree -> Int
 treeScore = go 1
