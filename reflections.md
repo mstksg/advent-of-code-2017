@@ -880,9 +880,9 @@ Getting the score is a simple recursive traversal:
 treeScore :: Tree -> Int
 treeScore = go 1
   where
-    go n = \case
-      Garbage _ -> 0
-      Group ts  -> n + sum (go (n + 1) <$> ts)
+    go _ (Garbage _ ) = 0
+    go n (Group   ts) = n + sum (go (n + 1) <$> ts)
+
 ```
 
 Getting the total amount of garbage is, as well:

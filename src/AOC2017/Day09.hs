@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase    #-}
 {-# LANGUAGE TupleSections #-}
 
 module AOC2017.Day09 (day09a, day09b) where
@@ -35,9 +34,8 @@ parseTree = P.choice [ Group   <$> parseGroup
 treeScore :: Tree -> Int
 treeScore = go 1
   where
-    go n = \case
-      Garbage _ -> 0
-      Group ts  -> n + sum (go (n + 1) <$> ts)
+    go _ (Garbage _ ) = 0
+    go n (Group   ts) = n + sum (go (n + 1) <$> ts)
 
 treeGarbage :: Tree -> Int
 treeGarbage (Garbage n ) = n
