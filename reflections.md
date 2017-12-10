@@ -999,13 +999,21 @@ data HashState n = HS { _hsVec  :: V.Vector n Int
                       }
 ```
 
-Here I'm using `DataKinds` with the *vector-sized* library and the
-*finite-typelits* library.  `Vector n Int`, where `n :: Nat` (a type-level
+Here I'm using `DataKinds` with the *[vector-sized][]* library and the
+*[finite-typelits][]* library.  `Vector n Int`, where `n :: Nat` (a type-level
 natural number) is a vector with exactly `n` `Int`s.  `Finite n` is a type with
 exactly `n` inhabitants, and so works well as an *index* for a `Vector n Int`.
 
+[vector-sized]: http://hackage.haskell.org/package/vector-sized
+[finite-typelits]: http://hackage.haskell.org/package/finite-typelits
+
 For example, for this puzzle, `HashState 256` would be the type we're using --
 with `Vector 256 Int` (256 ints) and a `Finite 256` (index from 0 to 255).
+
+For more information, please refer to my [blog post][vector-blog] for a full
+tutorial and explanation on how to use these types.
+
+[vector-blog]: https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html
 
 This `(Vector n a, Finite n)` pairing is actually something that has come up *a
 lot* over the previous Advent of Code puzzles.  It's basically a vector
@@ -1030,7 +1038,6 @@ step (HS v0 p0 s0) n = HS v1 p1 s1
     v1   = v0 V.// zip ixes (reverse vals)
     p1   = p0 + modClass (n + s0)
     s1   = s0 + 1
-
 ```
 
 Our updating function is somewhat of a direct translation of the requirements.
@@ -1057,7 +1064,24 @@ handles that for us.  We just need to convert `n + s0` into `Finite n`, which
 we can do using `modClass`.  `modClass` converts an `Integral` to a `Finite n`
 by wrapping around values that are out of range, like a clock.
 
-We can iterate this using `foldl'`
+Note that as of the time of writing, `modClass` is not yet in any version of
+*finite-typelits* on Hackage, and neither is a `(//)` that would take
+`Finite`s.  I'm using my own forks:
+
+```yaml
+packages:
+- .
+- location:
+    git: https://github.com/mstksg/finite-typelits.git
+    commit: d6cfd34db8843e66203f44cca1d8dd6fea6b813d
+  extra-dep: true
+- location:
+    git: https://github.com/mstksg/vector-sized.git
+    commit: 782fd4679c2eeab990b70b61432d474e8a77eab5
+  extra-dep: true
+```
+
+Now we can iterate this using `foldl'`
 
 ```haskell
 process :: KnownNat n => [Int] -> V.Vector n Int
@@ -1077,6 +1101,11 @@ Care must be taken to specify what we want `n` to be -- that is, the size of
 our permutation buffer.  We can use the *TypeApplications* to specify that we
 want a 256-vector.
 
+We can parse our input using `map read . splitOn "," :: String -> [Int]`,
+`splitOn` from the *[split][]* library.
+
+[split]: http://hackage.haskell.org/package/split
+
 ### Part 2
 
 Part 2 is pretty straightforward in that the *logic* is extremely simple, just
@@ -1084,10 +1113,10 @@ do a series of transformations.
 
 
 ```haskell
-day10b :: Challenge
+day10b :: [Char] -> Int
 day10b = toHex . process @256
-       . concat . replicate 64 . (++ salt)
-       . map ord . strip
+       . concat . replicate 64
+       . (++ salt) . map ord
   where
     salt  = [17, 31, 73, 47, 23]
     toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
@@ -1096,20 +1125,19 @@ day10b = toHex . process @256
 
 We:
 
-1.  Strip leading and trailing whitespace
-2.  `map ord :: String -> [Int]`
+1.  `map ord :: String -> [Int]`
 3.  Append the salt bytes at the end
 4.  `concat . replicate 64 :: [a] -> [a]`, replicate the list of inputs 64 times
 5.  `process` things like how we did in Part 1
 6.  Get the `V.Vector 256 a` out of the `HashState 256`
 7.  Convert to hex:
-    *   Break into chunks of 16
+    *   Break into chunks of 16 (using `chunksOf` from the *[split][]* library)
     *   `foldr` each chunk of 16 using `xor`
     *   Convert the resulting `Int` to a hex string, using `printf %02x`
     *   Aggregate all of the chunk results later
 
-Again, it's not super complicated, it's just that there are so many things
-steps described in the puzzle!
+Again, it's not super complicated, it's just that there are so many steps
+described in the puzzle!
 
 ### Day 10 Benchmarks
 
