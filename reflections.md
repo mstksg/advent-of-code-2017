@@ -993,34 +993,18 @@ the most :)
 Our solution today revolves around this state type:
 
 ```haskell
-data HashState n = HS { _hsVec  :: V.Vector n Int
-                      , _hsPos  :: Finite n
-                      , _hsSkip :: Integer
-                      }
+data HashState = HS { _hsVec  :: V.Vector Int
+                    , _hsPos  :: Word8
+                    , _hsSkip :: Word8
+                    }
 ```
 
-Here I'm using `DataKinds` with the *[vector-sized][]* library and the
-*[finite-typelits][]* library.  `Vector n Int`, where `n :: Nat` (a type-level
-natural number) is a vector with exactly `n` `Int`s.  `Finite n` is a type with
-exactly `n` inhabitants, and so works well as an *index* for a `Vector n Int`.
-
-[vector-sized]: http://hackage.haskell.org/package/vector-sized
-[finite-typelits]: http://hackage.haskell.org/package/finite-typelits
-
-For example, for this puzzle, `HashState 256` would be the type we're using --
-with `Vector 256 Int` (256 ints) and a `Finite 256` (index from 0 to 255).
-
-For more information, please refer to my [blog post][vector-blog] for a full
-tutorial and explanation on how to use these types.
-
-[vector-blog]: https://blog.jle.im/entry/fixed-length-vector-types-in-haskell.html
-
-This `(Vector n a, Finite n)` pairing is actually something that has come up *a
-lot* over the previous Advent of Code puzzles.  It's basically a vector
-attached with some "index" (or "focus").  It's actually a manifestation of the [*Store*
-Comonad][store].  Something like this really would have made a lot of the
-previous puzzles really simple, or at least would have been very suitable for
-their implementations.
+Interesting note -- this `Vector, Int` pairing is actually something that has
+come up *a lot* over the previous Advent of Code puzzles.  It's basically a
+vector attached with some "index" (or "focus").  It's actually a manifestation
+of the [*Store* Comonad][store].  Something like this really would have made a
+lot of the previous puzzles really simple, or at least would have been very
+suitable for their implementations.
 
 [store]: http://hackage.haskell.org/package/comonad-5.0.2/docs/Control-Comonad-Store.html
 
@@ -1030,82 +1014,53 @@ Anyway, most of the algorithm boils down to a `foldl` with this state on some
 list of inputs:
 
 ```haskell
-step :: KnownNat n => HashState n -> Int -> HashState n
+step :: HashState -> Word8 -> HashState
 step (HS v0 p0 s0) n = HS v1 p1 s1
   where
-    ixes = take n $ iterate (+ 1) p0
-    vals = V.index v0 <$> ixes
+    ixes = fromIntegral . (+ p0) <$> init [0 .. n]
+    vals = (v0 V.!) <$> ixes
     v1   = v0 V.// zip ixes (reverse vals)
-    p1   = p0 + modClass (n + s0)
+    p1   = p0 + n + s0
     s1   = s0 + 1
 ```
 
 Our updating function is somewhat of a direct translation of the requirements.
-All of the indices to update are enumerated using `iterate (+ 1) p0`, and we
-take `n` of those to get the `n` indices after `p0`.
+All of the indices to update are enumerated using `[0 .. n]`.  But, we only
+want the first `n` items (we don't want to actually include `n`, just `n - 1`),
+so we can take the `init` of it.  We shift their positions by `+ p0`.
 
-Note that the `Num` instance for `Finite n` implements modular arithmetic, so
-`iterate (+ 1) p0` automatically cycles around after reaching the final index.
-For example, for `Finite 4`, `iterate (+ 1) 2` would be `[2, 3, 0, 1, 2, 3
-...]`, etc.  This handles the periodic boundary conditions for us.
+The "trick" to the cyclic vector is that `Word8` addition is modular
+arithmetic, so this will actually cause overflows to wrap around like we
+require.  For example, `(+ 253) <$> [0..5]` is `[253,254,255,0,1,2]`
 
-We also need the *values* at each of the indices, so we map `V.index v0` over
-our list of indices.
+We also need the *values* at each of the indices, so we map `(v0 V.!)` over our
+list of indices.
 
-Finally, we use `(//) :: V.Vector n a -> [(Finite n, a)] -> V.Vector n a` to
+Finally, we use `(//) :: Vector a -> [(Int, a)] -> Vector a` to
 update all of the items necessary.  `//` replaces all of the indices in the
 list with the values they are paired up with.  For us, we want to put the items
 back in the list in reverse order, so we zip `ixes` and `reverse vals`, so that
 the indices at `ixes` are set to be the values `reverse vals`.
 
-`p1 = p0 + n + s0`, according to the puzzle, but `n` and `s0` are `Int`s.  We
-want to make sure these are added in a "cyclic" way.  Luckily, `+` for `Finite`
-handles that for us.  We just need to convert `n + s0` into `Finite n`, which
-we can do using `modClass`.  `modClass` converts an `Integral` to a `Finite n`
-by wrapping around values that are out of range, like a clock.
-
-We actually don't quite need `Finite` to do this -- we could really just use
-`Word8`, since addition of `Word8`s is cyclic/modular.  I just thought using
-`Finite` would be a little more flexible in case we wanted to change the size
-of the hash size for Part 1 or something else in the future.  It's also a nice
-way to try out "dependent" types for fun :)
-
-Note that as of the time of writing, `modClass` is not yet in any version of
-*finite-typelits* on Hackage, and neither is a `(//)` that would take
-`Finite`s.  I'm using my own forks:
-
-```yaml
-packages:
-- .
-- location:
-    git: https://github.com/mstksg/finite-typelits.git
-    commit: d6cfd34db8843e66203f44cca1d8dd6fea6b813d
-  extra-dep: true
-- location:
-    git: https://github.com/mstksg/vector-sized.git
-    commit: 782fd4679c2eeab990b70b61432d474e8a77eab5
-  extra-dep: true
-```
+Our new position is `p0 + n + s0` -- the current position plus the length plus
+the skip count.  Again, because of `Word8` arithmetic, this wraps around at
+`255`, so it has the behavior we want.
 
 Now we can iterate this using `foldl'`
 
 ```haskell
-process :: KnownNat n => [Int] -> V.Vector n Int
+process :: [Word8] -> V.Vector Int
 process = _hsVec . foldl' step hs0
   where
-    hs0 = HS (V.generate fromIntegral) 0 0
+    hs0 = HS (V.generate 256 id) 0 0
 ```
 
 From here, we can write our Part 1:
 
 ```haskell
 day10a :: [Int] -> Int
-day10a = product . take 2 . toList . process @256
+day10a = product . V.take 2 . process
 ```
-
-Care must be taken to specify what we want `n` to be -- that is, the size of
-our permutation buffer.  We can use the *TypeApplications* to specify that we
-want a 256-vector.
 
 We can parse our input using `map read . splitOn "," :: String -> [Int]`,
 `splitOn` from the *[split][]* library.
@@ -1119,10 +1074,9 @@ do a series of transformations.
 
 
 ```haskell
-day10b :: [Char] -> Int
-day10b = toHex . process @256
-       . concat . replicate 64
-       . (++ salt) . map ord
+day10b :: [Word8] -> String
+day10b = toHex . process
+       . concat . replicate 64 . (++ salt)
   where
     salt  = [17, 31, 73, 47, 23]
     toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
@@ -1131,11 +1085,9 @@ day10b = toHex . process @256
 
 We:
 
-1.  `map ord :: String -> [Int]`
 3.  Append the salt bytes at the end
 4.  `concat . replicate 64 :: [a] -> [a]`, replicate the list of inputs 64 times
 5.  `process` things like how we did in Part 1
-6.  Get the `V.Vector 256 a` out of the `HashState 256`
 7.  Convert to hex:
     *   Break into chunks of 16 (using `chunksOf` from the *[split][]* library)
     *   `foldr` each chunk of 16 using `xor`
@@ -1145,6 +1097,9 @@ We:
 Again, it's not super complicated, it's just that there are so many steps
 described in the puzzle!
 
+We can parse our input using `map (fromIntegral . ord) :: String -> [Word8]`,
+taking care to also strip any leading and trailing whitespace first.
+
 ### Day 10 Benchmarks
 
 *Note:* Benchmarks measured with *storable* vectors.
@@ -1152,18 +1107,18 @@ described in the puzzle!
 ```
 >> Day 10a
 benchmarking...
-time                 298.3 μs   (287.8 μs .. 310.5 μs)
-                     0.981 R²   (0.962 R² .. 0.994 R²)
-mean                 332.4 μs   (296.9 μs .. 458.4 μs)
-std dev              212.7 μs   (37.85 μs .. 445.3 μs)
+time                 254.6 μs   (242.1 μs .. 268.9 μs)
+                     0.925 R²   (0.851 R² .. 0.976 R²)
+mean                 348.8 μs   (289.1 μs .. 467.6 μs)
+std dev              265.2 μs   (147.4 μs .. 414.0 μs)
 variance introduced by outliers: 99% (severely inflated)
 
 >> Day 10b
 benchmarking...
-time                 34.90 ms   (30.87 ms .. 39.75 ms)
-                     0.948 R²   (0.881 R² .. 0.984 R²)
-mean                 31.84 ms   (30.19 ms .. 33.98 ms)
-std dev              4.027 ms   (2.827 ms .. 5.244 ms)
-variance introduced by outliers: 48% (moderately inflated)
+time                 25.00 ms   (21.24 ms .. 27.61 ms)
+                     0.936 R²   (0.822 R² .. 0.992 R²)
+mean                 26.21 ms   (24.47 ms .. 33.03 ms)
+std dev              6.425 ms   (1.676 ms .. 13.03 ms)
+variance introduced by outliers: 83% (severely inflated)
 ```
 

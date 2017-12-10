@@ -1,17 +1,14 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE TypeApplications #-}
-
 module AOC2017.Day10 (day10a, day10b) where
 
-import           AOC2017.Types   (Challenge)
-import           Data.Bits       (xor)
-import           Data.Char       (ord)
-import           Data.List       (foldl')
-import           Data.List.Split (chunksOf, splitOn)
-import           Data.Word       (Word8)
-import           Text.Printf     (printf)
-import qualified Data.Text       as T
-import qualified Data.Vector     as V
+import           AOC2017.Types        (Challenge)
+import           Data.Bits            (xor)
+import           Data.Char            (ord)
+import           Data.List            (foldl')
+import           Data.List.Split      (chunksOf, splitOn)
+import           Data.Word            (Word8)
+import           Text.Printf          (printf)
+import qualified Data.Text            as T
+import qualified Data.Vector.Storable as V
 
 data HashState = HS { _hsVec  :: V.Vector Int
                     , _hsPos  :: Word8
@@ -33,7 +30,7 @@ process = _hsVec . foldl' step hs0
     hs0 = HS (V.generate 256 id) 0 0
 
 day10a :: Challenge
-day10a = show . product . take 2 . V.toList
+day10a = show . V.product . V.take 2
        . process
        . map read . splitOn ","
 
