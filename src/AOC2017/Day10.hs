@@ -1,45 +1,51 @@
+{-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns     #-}
 
 module AOC2017.Day10 (day10a, day10b) where
 
-import           AOC2017.Types   (Challenge)
-import           Data.Bits       (xor)
-import           Data.Char       (ord)
-import           Data.List       (foldl')
-import           Data.List.Split (chunksOf, splitOn)
-import           Text.Printf     (printf)
-import qualified Data.Text       as T
-import qualified Data.Vector     as V
+import           AOC2017.Types     (Challenge)
+import           Data.Bits         (xor)
+import           Data.Char         (ord)
+import           Data.Finite       (Finite, finite, modClass)
+import           Data.Foldable     (toList)
+import           Data.List         (foldl')
+import           Data.List.Split   (chunksOf, splitOn)
+import           GHC.TypeNats      (KnownNat)
+import           Text.Printf       (printf)
+import qualified Data.Text         as T
+import qualified Data.Vector.Sized as V
 
-data HashState = HS { _hsVec  :: V.Vector Int
-                    , _hsPos  :: Int
-                    , _hsSkip :: Int
-                    }
+data HashState n = HS { _hsVec  :: V.Vector n Int
+                      , _hsPos  :: Finite n
+                      , _hsSkip :: Integer
+                      }
 
-initHS :: HashState
-initHS = HS (V.generate 256 id) 0 0
+initHS :: KnownNat n => HashState n
+initHS = HS (V.generate fromIntegral) 0 0
 
-step :: HashState -> Int -> HashState
+step :: KnownNat n => HashState n -> Finite n -> HashState n
 step (HS v0 p0 s0) n = HS v1 p1 s1
   where
-    ixes = (`mod` 256) <$> [ p0 .. p0 + n - 1 ]
-    v1 = v0 V.// zip ixes ((v0 V.!) <$> reverse ixes)
-    p1 = (p0 + n + s0) `mod` 256
-    s1 = s0 + 1
+    ixes = take (fromIntegral n) $ iterate (+ 1) p0
+    vals = V.index v0 <$> ixes
+    v1   = v0 V.// zip ixes (reverse vals)
+    p1   = p0 + n + modClass s0
+    s1   = s0 + 1
 
 day10a :: Challenge
-day10a = show . product . V.take 2 . _hsVec
-       . foldl' step initHS
-       . map read . splitOn ","
+day10a = show . product . take 2 . toList . _hsVec
+       . foldl' step (initHS @256)
+       . map (finite . read @Integer) . splitOn ","
 
 day10b :: Challenge
-day10b = concatMap (printf "%02x" . foldr xor 0)
-       . chunksOf 16 . V.toList . _hsVec
-       . foldl' step initHS
-       . concat . replicate 64 . (++ salt) . map ord
-       . T.unpack . T.strip . T.pack
+day10b = toHex . _hsVec
+       . foldl' step (initHS @256)
+       . concat . replicate 64 . (++ salt)
+       . map (fromIntegral . ord) . strip
   where
-    salt = [17, 31, 73, 47, 23]
+    salt  = [17, 31, 73, 47, 23]
+    toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
+    strip = T.unpack . T.strip . T.pack
 

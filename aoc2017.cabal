@@ -33,6 +33,7 @@ library
                        AOC2017.Day10
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5.10.2
+                     , finite-typelits
                      , lens
                      , megaparsec
                      , mtl
@@ -40,6 +41,7 @@ library
                      , text
                      , transformers
                      , vector
+                     , vector-sized
   default-language:    Haskell2010
   ghc-options:         -Wall
 
