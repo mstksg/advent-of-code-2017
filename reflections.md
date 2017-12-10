@@ -1141,21 +1141,23 @@ described in the puzzle!
 
 ### Day 10 Benchmarks
 
+*Note:* Benchmarks measured with *storable* vectors.
+
 ```
 >> Day 10a
 benchmarking...
-time                 331.9 μs   (304.0 μs .. 376.4 μs)
-                     0.934 R²   (0.877 R² .. 0.991 R²)
-mean                 332.0 μs   (314.2 μs .. 364.9 μs)
-std dev              79.80 μs   (41.96 μs .. 133.2 μs)
-variance introduced by outliers: 95% (severely inflated)
+time                 298.3 μs   (287.8 μs .. 310.5 μs)
+                     0.981 R²   (0.962 R² .. 0.994 R²)
+mean                 332.4 μs   (296.9 μs .. 458.4 μs)
+std dev              212.7 μs   (37.85 μs .. 445.3 μs)
+variance introduced by outliers: 99% (severely inflated)
 
 >> Day 10b
 benchmarking...
-time                 79.28 ms   (72.15 ms .. 85.72 ms)
-                     0.990 R²   (0.982 R² .. 0.998 R²)
-mean                 83.48 ms   (80.33 ms .. 88.20 ms)
-std dev              5.926 ms   (3.692 ms .. 8.949 ms)
-variance introduced by outliers: 19% (moderately inflated)
+time                 34.90 ms   (30.87 ms .. 39.75 ms)
+                     0.948 R²   (0.881 R² .. 0.984 R²)
+mean                 31.84 ms   (30.19 ms .. 33.98 ms)
+std dev              4.027 ms   (2.827 ms .. 5.244 ms)
+variance introduced by outliers: 48% (moderately inflated)
 ```
 

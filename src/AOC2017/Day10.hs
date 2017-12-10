@@ -3,17 +3,16 @@
 
 module AOC2017.Day10 (day10a, day10b) where
 
-import           AOC2017.Types     (Challenge)
-import           Data.Bits         (xor)
-import           Data.Char         (ord)
-import           Data.Finite       (Finite, modClass)
-import           Data.Foldable     (toList)
-import           Data.List         (foldl')
-import           Data.List.Split   (chunksOf, splitOn)
-import           GHC.TypeNats      (KnownNat)
-import           Text.Printf       (printf)
-import qualified Data.Text         as T
-import qualified Data.Vector.Sized as V
+import           AOC2017.Types              (Challenge)
+import           Data.Bits                  (xor)
+import           Data.Char                  (ord)
+import           Data.Finite                (Finite, modClass)
+import           Data.List                  (foldl')
+import           Data.List.Split            (chunksOf, splitOn)
+import           GHC.TypeNats               (KnownNat)
+import           Text.Printf                (printf)
+import qualified Data.Text                  as T
+import qualified Data.Vector.Storable.Sized as V
 
 data HashState n = HS { _hsVec  :: V.Vector n Int
                       , _hsPos  :: Finite n
@@ -35,7 +34,7 @@ process = _hsVec . foldl' step hs0
     hs0 = HS (V.generate fromIntegral) 0 0
 
 day10a :: Challenge
-day10a = show . product . take 2 . toList
+day10a = show . product . take 2 . V.toList
        . process @256
        . map read . splitOn ","
 
@@ -45,6 +44,6 @@ day10b = toHex . process @256
        . map ord . strip
   where
     salt  = [17, 31, 73, 47, 23]
-    toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
+    toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . V.toList
     strip = T.unpack . T.strip . T.pack
 
