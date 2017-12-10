@@ -1064,6 +1064,12 @@ handles that for us.  We just need to convert `n + s0` into `Finite n`, which
 we can do using `modClass`.  `modClass` converts an `Integral` to a `Finite n`
 by wrapping around values that are out of range, like a clock.
 
+We actually don't quite need `Finite` to do this -- we could really just use
+`Word8`, since addition of `Word8`s is cyclic/modular.  I just thought using
+`Finite` would be a little more flexible in case we wanted to change the size
+of the hash size for Part 1 or something else in the future.  It's also a nice
+way to try out "dependent" types for fun :)
+
 Note that as of the time of writing, `modClass` is not yet in any version of
 *finite-typelits* on Hackage, and neither is a `(//)` that would take
 `Finite`s.  I'm using my own forks:
