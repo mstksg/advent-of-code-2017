@@ -6,11 +6,9 @@ module AOC2017.Day10 (day10a, day10b) where
 import           AOC2017.Types   (Challenge)
 import           Data.Bits       (xor)
 import           Data.Char       (ord)
-import           Data.Finite     (Finite, modClass)
 import           Data.List       (foldl')
 import           Data.List.Split (chunksOf, splitOn)
-import           Data.Word
-import           GHC.TypeNats    (KnownNat)
+import           Data.Word       (Word8)
 import           Text.Printf     (printf)
 import qualified Data.Text       as T
 import qualified Data.Vector     as V
@@ -23,7 +21,7 @@ data HashState = HS { _hsVec  :: V.Vector Int
 step :: HashState -> Word8 -> HashState
 step (HS v0 p0 s0) n = HS v1 p1 s1
   where
-    ixes = fromIntegral . (+ p0) <$> [0 .. n-1]
+    ixes = fromIntegral . (+ p0) <$> init [0 .. n]
     vals = (v0 V.!) <$> ixes
     v1   = v0 V.// zip ixes (reverse vals)
     p1   = p0 + n + s0
