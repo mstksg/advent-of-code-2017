@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module AOC2017.Day09 (day09a, day09b) where
 
 import           AOC2017.Types        (Challenge)

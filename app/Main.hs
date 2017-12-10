@@ -44,6 +44,7 @@ data TestSpec = TSAll
 data Opts = O { _oTestSpec :: TestSpec
               , _oTests    :: Bool
               , _oBench    :: Bool
+              , _oLock     :: Bool
               , _oConfig   :: Maybe FilePath
               }
 
@@ -77,7 +78,7 @@ main = do
             return $ IM.singleton d (M.singleton p c)
     case toRun of
       Left e   -> putStrLn e
-      Right cs -> flip (runAll _cfgSession) cs $ \c CD{..} -> do
+      Right cs -> flip (runAll _cfgSession _oLock) cs $ \c CD{..} -> do
         case _cdInp of
           Left err | not _oTests || _oBench -> do
             putStrLn "[ERROR]"
@@ -85,7 +86,7 @@ main = do
           _ ->
             return ()
         when _oTests $ do
-          testRes <- catMaybes <$> mapM (uncurry (testCase True c)) _cdTests
+          testRes <- mapMaybe fst <$> mapM (uncurry (testCase True c)) _cdTests
           unless (null testRes) $ do
             let (mark, color)
                     | and testRes = ('✓', ANSI.Green)
@@ -98,51 +99,52 @@ main = do
             ANSI.setSGR [ ANSI.Reset ]
         when (_oTests || not _oBench) . forM_ _cdInp $ \inp ->
           testCase False c inp _cdAns
+
         when _oBench . forM_ _cdInp $ \inp ->
           benchmark (nf c inp)
 
 runAll
     :: Maybe String
+    -> Bool
     -> (Challenge -> ChallengeData -> IO ())
     -> IM.IntMap (M.Map Char Challenge)
     -> IO ()
-runAll sess f = fmap void          $
-                IM.traverseWithKey $ \d ->
-                M.traverseWithKey  $ \p c -> do
+runAll sess lock f = fmap void          $
+                     IM.traverseWithKey $ \d ->
+                     M.traverseWithKey  $ \p c -> do
     printf ">> Day %02d%c\n" d p
+    dat <- getData d p
+    when lock . forM_ (_cdInp dat) $ \inp ->
+      writeFile (ansFn d p) $ c inp
     f c =<< getData d p
   where
     getData :: Int -> Char -> IO ChallengeData
     getData d p = do
         inp   <- runExceptT . asum $
-          [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe inpFn
+          [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe (inpFn d)
           , fetchInput
           ]
-        ans   <- readFileMaybe ansFn
-        ts    <- foldMap (parseTests . lines) <$> readFileMaybe testsFn
+        ans   <- readFileMaybe (ansFn d p)
+        ts    <- foldMap (parseTests . lines) <$> readFileMaybe (testsFn d p)
         return $ CD inp ans ts
       where
         fileErr :: String
-        fileErr = printf "Input file not found at %s" inpFn
+        fileErr = printf "Input file not found at %s" (inpFn d)
         fetchInput :: ExceptT [String] IO String
         fetchInput = do
-          s <- maybe (throwE ["Session key needed to fetch input"]) return $
+          s <- maybe (throwE ["Session key needed to fetch input"]) return
             sess
-          (cc, r) <- liftIO . withCurlDo . curlGetString dataUrl $
+          (cc, r) <- liftIO . withCurlDo . curlGetString (dataUrl d) $
               CurlCookie (printf "session=%s" s) : method_GET
           case cc of
             CurlOK -> return ()
             _      -> throwE [ "Error contacting advent of code server to fetch input"
                              , "Possible invalid session key"
-                             , printf "Url: %s" dataUrl
+                             , printf "Url: %s" (dataUrl d)
                              , printf "Server response: %s" r
                              ]
-          liftIO $ writeFile inpFn r
+          liftIO $ writeFile (inpFn d) r
           return r
-        dataUrl = printf "http://adventofcode.com/2017/day/%d/input" d
-        inpFn   = "data"     </> printf "%02d" d <.> "txt"
-        ansFn   = "data/ans" </> printf "%02d%c" d p <.> "txt"
-        testsFn = "test-data" </> printf "%02d%c" d p <.> "txt"
     parseTests :: [String] -> [(String, Maybe String)]
     parseTests xs = case break (">>> " `isPrefixOf`) xs of
       (strip.unlines->inp,[])
@@ -158,8 +160,17 @@ runAll sess f = fmap void          $
         (traverse (evaluate . force) . either (const Nothing) Just =<<)
        . tryJust (guard . isDoesNotExistError)
        . readFile
+    dataUrl     = printf "http://adventofcode.com/2017/day/%d/input"
+    inpFn   d   = "data"     </> printf "%02d" d <.> "txt"
+    ansFn   d p = "data/ans" </> printf "%02d%c" d p <.> "txt"
+    testsFn d p = "test-data" </> printf "%02d%c" d p <.> "txt"
 
-testCase :: Bool -> Challenge -> String -> Maybe String -> IO (Maybe Bool)
+testCase
+    :: Bool
+    -> Challenge
+    -> String
+    -> Maybe String
+    -> IO (Maybe Bool, String)
 testCase emph c inp ans = do
     ANSI.setSGR [ ANSI.SetColor ANSI.Foreground ANSI.Vivid color ]
     printf "[%c]" mark
@@ -171,7 +182,7 @@ testCase emph c inp ans = do
       ANSI.setSGR [ ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.Red ]
       printf "(Expected: %s)\n" a
       ANSI.setSGR [ ANSI.Reset ]
-    return status
+    return (status, res)
   where
     res = c inp
     (mark, showAns, status) = case ans of
@@ -198,17 +209,21 @@ parseOpts = do
     b <- switch $ long "bench"
                <> short 'b'
                <> help "Run benchmarks"
+    l <- switch $ long "lock"
+               <> short 'l'
+               <> help "Lock in results as \"correct\" answers"
     c <- optional $ strOption
         ( long "config"
        <> short 'c'
        <> metavar "PATH"
        <> help "Path to configuration file (default: aoc2017-conf.yaml)"
         )
-    pure $ case d of
-      Just d' -> case p of
-        Just p' -> O (TSDayPart d' p') t b c
-        Nothing -> O (TSDayAll  d') t b c
-      Nothing -> O TSAll t b c
+    pure $ let ts = case d of
+                      Just d' -> case p of
+                        Just p' -> TSDayPart d' p'
+                        Nothing -> TSDayAll  d'
+                      Nothing -> TSAll
+           in  O ts t b l c
   where
     pFin = eitherReader $ \s -> do
         n <- maybe (Left "Invalid day") Right $ readMaybe s
