@@ -5,18 +5,15 @@
 
 module AOC2017.Day10 (day10a, day10b) where
 
--- import qualified Data.Vector       as V
 import           AOC2017.Types     (Challenge)
-import           Control.Monad
-import           Data.Bits
-import           Data.Char
-import           Data.Finite
-import           Data.List
-import           Data.List.Split
-import           Data.Word
-import           Debug.Trace
-import           GHC.TypeNats
-import           Text.Printf
+import           Data.Bits         (xor)
+import           Data.Char         (ord)
+import           Data.Finite       (Finite, finite, modClass)
+import           Data.Foldable     (toList)
+import           Data.List         (foldl')
+import           Data.List.Split   (chunksOf, splitOn)
+import           GHC.TypeNats      (KnownNat)
+import           Text.Printf       (printf)
 import qualified Data.Text         as T
 import qualified Data.Vector.Sized as V
 
@@ -37,7 +34,7 @@ step (HS v0 p0 s0) n = HS v1 p1 s1
     s1   = s0 + 1
 
 day10a :: Challenge
-day10a = show . product . V.take @_ @2 . _hsVec
+day10a = show . product . take 2 . toList . _hsVec
        . foldl' step (initHS @256)
        . map (finite . read @Integer) . splitOn ","
 
