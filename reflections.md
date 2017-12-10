@@ -975,3 +975,161 @@ std dev              411.1 μs   (232.5 μs .. 595.1 μs)
 variance introduced by outliers: 76% (severely inflated)
 ```
 
+Day 10
+------
+
+*([code][d10c])* *([stream][d10s])*
+
+[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day10.hs
+[d10s]: https://www.twitch.tv/videos/208287550
+
+I feel like I actually had a shot today, if it weren't for a couple of silly
+mistakes! :(  First I forgot to add a number, then I had a stray newline in my
+input for some reason.  For Day 9, I struggled to get an idea of what's going
+on, but once I had a clear plan, the rest was easy.  For Day 10, the clear idea
+was fast, but the many minor lapses along the way were what probably delayed me
+the most :)
+
+Our solution today revolves around this state type:
+
+```haskell
+data HashState n = HS { _hsVec  :: V.Vector n Int
+                      , _hsPos  :: Finite n
+                      , _hsSkip :: Integer
+                      }
+```
+
+Here I'm using `DataKinds` with the *vector-sized* library and the
+*finite-typelits* library.  `Vector n Int`, where `n :: Nat` (a type-level
+natural number) is a vector with exactly `n` `Int`s.  `Finite n` is a type with
+exactly `n` inhabitants, and so works well as an *index* for a `Vector n Int`.
+
+For example, for this puzzle, `HashState 256` would be the type we're using --
+with `Vector 256 Int` (256 ints) and a `Finite 256` (index from 0 to 255).
+
+This `(Vector n a, Finite n)` pairing is actually something that has come up *a
+lot* over the previous Advent of Code puzzles.  It's basically a vector
+attached with some "index" (or "focus").  It's actually a manifestation of the [*Store*
+Comonad][store].  Something like this really would have made a lot of the
+previous puzzles really simple, or at least would have been very suitable for
+their implementations.
+
+[store]: http://hackage.haskell.org/package/comonad-5.0.2/docs/Control-Comonad-Store.html
+
+### Part 1
+
+Anyway, most of the algorithm boils down to a `foldl` with this state on some
+list of inputs:
+
+```haskell
+step :: KnownNat n => HashState n -> Int -> HashState n
+step (HS v0 p0 s0) n = HS v1 p1 s1
+  where
+    ixes = take n $ iterate (+ 1) p0
+    vals = V.index v0 <$> ixes
+    v1   = v0 V.// zip ixes (reverse vals)
+    p1   = p0 + modClass (n + s0)
+    s1   = s0 + 1
+
+```
+
+Our updating function is somewhat of a direct translation of the requirements.
+All of the indices to update are enumerated using `iterate (+ 1) p0`, and we
+take `n` of those to get the `n` indices after `p0`.
+
+Note that the `Num` instance for `Finite n` implements modular arithmetic, so
+`iterate (+ 1) p0` automatically cycles around after reaching the final index.
+For example, for `Finite 4`, `iterate (+ 1) 2` would be `[2, 3, 0, 1, 2, 3
+...]`, etc.  This handles the periodic boundary conditions for us.
+
+We also need the *values* at each of the indices, so we map `V.index v0` over
+our list of indices.
+
+Finally, we use `(//) :: V.Vector n a -> [(Finite n, a)] -> V.Vector n a` to
+update all of the items necessary.  `//` replaces all of the indices in the
+list with the values they are paired up with.  For us, we want to put the items
+back in the list in reverse order, so we zip `ixes` and `reverse vals`, so that
+the indices at `ixes` are set to be the values `reverse vals`.
+
+`p1 = p0 + n + s0`, according to the puzzle, but `n` and `s0` are `Int`s.  We
+want to make sure these are added in a "cyclic" way.  Luckily, `+` for `Finite`
+handles that for us.  We just need to convert `n + s0` into `Finite n`, which
+we can do using `modClass`.  `modClass` converts an `Integral` to a `Finite n`
+by wrapping around values that are out of range, like a clock.
+
+We can iterate this using `foldl'`
+
+```haskell
+initHS :: KnownNat n => HashState n
+initHS = HS (V.generate fromIntegral) 0 0
+
+process :: [Int] -> HashState n
+process = foldl' step initHS
+```
+
+From here, we can write our Part 1:
+
+```haskell
+day10a :: [Int] -> Int
+day10a = product . take 2 . toList . _hsVec . process @256
+```
+
+Care must be taken to specify what we want `n` to be -- that is, the size of
+our permutation buffer.  We can use the *TypeApplications* to specify that we
+want a 256-vector.
+
+### Part 2
+
+Part 2 is pretty straightforward in that the *logic* is extremely simple, just
+do a series of transformations.
+
+
+```haskell
+day10b :: Challenge
+day10b = toHex . _hsVec
+       . process @256
+       . concat . replicate 64 . (++ salt)
+       . map ord . strip
+  where
+    salt  = [17, 31, 73, 47, 23]
+    toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
+    strip = T.unpack . T.strip . T.pack
+```
+
+We:
+
+1.  Strip leading and trailing whitespace
+2.  `map ord :: String -> [Int]`
+3.  Append the salt bytes at the end
+4.  `concat . replicate 64 :: [a] -> [a]`, replicate the list of inputs 64 times
+5.  `process` things like how we did in Part 1
+6.  Get the `V.Vector 256 a` out of the `HashState 256`
+7.  Convert to hex:
+    *   Break into chunks of 16
+    *   `foldr` each chunk of 16 using `xor`
+    *   Convert the resulting `Int` to a hex string, using `printf %02x`
+    *   Aggregate all of the chunk results later
+
+Again, it's not super complicated, it's just that there are so many things
+steps described in the puzzle!
+
+### Day 10 Benchmarks
+
+```
+>> Day 10a
+benchmarking...
+time                 385.2 μs   (363.1 μs .. 416.9 μs)
+                     0.969 R²   (0.941 R² .. 0.996 R²)
+mean                 384.8 μs   (373.8 μs .. 402.0 μs)
+std dev              46.06 μs   (26.70 μs .. 66.89 μs)
+variance introduced by outliers: 84% (severely inflated)
+
+>> Day 10b
+benchmarking...
+time                 91.91 ms   (84.95 ms .. 99.70 ms)
+                     0.988 R²   (0.968 R² .. 0.998 R²)
+mean                 89.00 ms   (84.48 ms .. 93.03 ms)
+std dev              6.968 ms   (5.226 ms .. 10.43 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+

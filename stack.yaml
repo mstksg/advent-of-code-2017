@@ -39,7 +39,7 @@ packages:
 - .
 - location:
     git: https://github.com/mstksg/finite-typelits.git
-    commit: 20fef64f32490c93264792532c4ab07b2800e160
+    commit: d6cfd34db8843e66203f44cca1d8dd6fea6b813d
   extra-dep: true
 - location:
     git: https://github.com/mstksg/vector-sized.git
