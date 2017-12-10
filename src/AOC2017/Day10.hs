@@ -16,50 +16,33 @@ import           Text.Printf
 import qualified Data.Text       as T
 import qualified Data.Vector     as V
 
-swap :: Int -> Int -> V.Vector Int -> V.Vector Int
-swap n s v = v V.// zip ixes (reverse ((v V.!) <$> ixes))
-  where
-    ixes = (`mod` V.length v) <$> [ n .. (n + s) - 1 ]
+data HashState = HS { _hsVec  :: V.Vector Int
+                    , _hsPos  :: Int
+                    , _hsSkip :: Int
+                    }
 
+initHS :: HashState
+initHS = HS (V.generate 256 id) 0 0
+
+step :: HashState -> Int -> HashState
+step (HS v0 p0 s0) n = HS v1 p1 s1
+  where
+    ixes = (`mod` V.length v0) <$> [ p0 .. p0 + n - 1 ]
+    v1 = v0 V.// zip ixes ((v0 V.!) <$> reverse ixes)
+    p1 = (p0 + n + s0) `mod` V.length v0
+    s1 = s0 + 1
 
 day10a :: Challenge
-day10a  = show
-        . product
-        . take 2
-        . V.toList
-        . (\(x,y,z) -> x)
-        . (\v' -> foldl' go (V.generate 256 id, 0, 0) v')
-        . map read
-        . words
-        . map (\case ',' -> ' '; x -> x)
-  where
-    go  :: (V.Vector Int, Int, Int)
-        -> Int
-        -> (V.Vector Int, Int, Int)
-    go (v0, i0, s0) amt
-        = (swap i0 amt v0, (i0 + amt + s0) `mod` V.length v0, s0 + 1)
-
-thing :: [Int] -> V.Vector Int
-thing xs = v'
-  where
-    (v',_, _) = foldl' go (V.generate 256 id, 0, 0) xs
-    go  :: (V.Vector Int, Int, Int)
-        -> Int
-        -> (V.Vector Int, Int, Int)
-    go (v0, i0, s0) amt
-        = (swap i0 amt v0, (i0 + amt + s0) `mod` V.length v0, s0 + 1)
+day10a = show . product . V.take 2 . _hsVec
+       . foldl' step initHS
+       . map read . splitOn ","
 
 day10b :: Challenge
-day10b = concat . map (printf "%02x" . hash) . chunksOf 16 . V.toList . thing . concat . (replicate 64) . (++ [17, 31, 73, 47, 23]) . map ord . T.unpack . T.strip . T.pack
+day10b = concatMap (printf "%02x" . foldr xor 0)
+       . chunksOf 16 . V.toList . _hsVec
+       . foldl' step initHS
+       . concat . replicate 64 . (++ salt) . map ord
+       . T.unpack . T.strip . T.pack
   where
-    hash :: [Int] -> Int
-    hash = fromIntegral @Word8 . foldr xor 0 . map fromIntegral
+    salt = [17, 31, 73, 47, 23]
 
--- 74adb99c18b890f1fc47e6ed5b7b6dc
--- (3efbe78a8d82f2997931a4aa0b16a9d)
--- (3efbe78a8d82f29979031a4aa0b16a9d)
--- [
---
--- 74adb99c18b8900f1fc47e6ed5b7b6dc
--- 74adb99c18b8900f1fc47e6ed5b7b6dc
--- 74adb99c18b890f1fc47e6ed5b7b6dc
