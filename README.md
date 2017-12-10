@@ -42,7 +42,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day07.hs
 [d8c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day08.hs
 [d9c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day09.hs
-[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day010.hs
+[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day10.hs
 
 [d1b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1-benchmarks
 [d2b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2-benchmarks
