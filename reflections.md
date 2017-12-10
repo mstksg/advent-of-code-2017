@@ -1060,18 +1060,17 @@ by wrapping around values that are out of range, like a clock.
 We can iterate this using `foldl'`
 
 ```haskell
-initHS :: KnownNat n => HashState n
-initHS = HS (V.generate fromIntegral) 0 0
-
-process :: [Int] -> HashState n
-process = foldl' step initHS
+process :: KnownNat n => [Int] -> V.Vector n Int
+process = _hsVec . foldl' step hs0
+  where
+    hs0 = HS (V.generate fromIntegral) 0 0
 ```
 
 From here, we can write our Part 1:
 
 ```haskell
 day10a :: [Int] -> Int
-day10a = product . take 2 . toList . _hsVec . process @256
+day10a = product . take 2 . toList . process @256
 ```
 
 Care must be taken to specify what we want `n` to be -- that is, the size of
@@ -1086,8 +1085,7 @@ do a series of transformations.
 
 ```haskell
 day10b :: Challenge
-day10b = toHex . _hsVec
-       . process @256
+day10b = toHex . process @256
        . concat . replicate 64 . (++ salt)
        . map ord . strip
   where
@@ -1118,18 +1116,18 @@ steps described in the puzzle!
 ```
 >> Day 10a
 benchmarking...
-time                 385.2 μs   (363.1 μs .. 416.9 μs)
-                     0.969 R²   (0.941 R² .. 0.996 R²)
-mean                 384.8 μs   (373.8 μs .. 402.0 μs)
-std dev              46.06 μs   (26.70 μs .. 66.89 μs)
-variance introduced by outliers: 84% (severely inflated)
+time                 331.9 μs   (304.0 μs .. 376.4 μs)
+                     0.934 R²   (0.877 R² .. 0.991 R²)
+mean                 332.0 μs   (314.2 μs .. 364.9 μs)
+std dev              79.80 μs   (41.96 μs .. 133.2 μs)
+variance introduced by outliers: 95% (severely inflated)
 
 >> Day 10b
 benchmarking...
-time                 91.91 ms   (84.95 ms .. 99.70 ms)
-                     0.988 R²   (0.968 R² .. 0.998 R²)
-mean                 89.00 ms   (84.48 ms .. 93.03 ms)
-std dev              6.968 ms   (5.226 ms .. 10.43 ms)
+time                 79.28 ms   (72.15 ms .. 85.72 ms)
+                     0.990 R²   (0.982 R² .. 0.998 R²)
+mean                 83.48 ms   (80.33 ms .. 88.20 ms)
+std dev              5.926 ms   (3.692 ms .. 8.949 ms)
 variance introduced by outliers: 19% (moderately inflated)
 ```
 

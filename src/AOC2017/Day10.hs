@@ -20,9 +20,6 @@ data HashState n = HS { _hsVec  :: V.Vector n Int
                       , _hsSkip :: Int
                       }
 
-initHS :: KnownNat n => HashState n
-initHS = HS (V.generate fromIntegral) 0 0
-
 step :: KnownNat n => HashState n -> Int -> HashState n
 step (HS v0 p0 s0) n = HS v1 p1 s1
   where
@@ -32,14 +29,18 @@ step (HS v0 p0 s0) n = HS v1 p1 s1
     p1   = p0 + modClass (n + s0)
     s1   = s0 + 1
 
+process :: KnownNat n => [Int] -> V.Vector n Int
+process = _hsVec . foldl' step hs0
+  where
+    hs0 = HS (V.generate fromIntegral) 0 0
+
 day10a :: Challenge
-day10a = show . product . take 2 . toList . _hsVec
-       . foldl' step (initHS @256)
+day10a = show . product . take 2 . toList
+       . process @256
        . map read . splitOn ","
 
 day10b :: Challenge
-day10b = toHex . _hsVec
-       . foldl' step (initHS @256)
+day10b = toHex . process @256
        . concat . replicate 64 . (++ salt)
        . map ord . strip
   where
