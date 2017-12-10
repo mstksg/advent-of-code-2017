@@ -19,8 +19,8 @@ processes and how my solutions all work.  Benchmarks also included.
 *   **[Day 6 Reflections][d6r]** *([code][d6c])* *([benchmarks][d6b])*
 *   **[Day 7 Reflections][d7r]** *([code][d7c])* *([benchmarks][d7b])*
 *   **[Day 8 Reflections][d8r]** *([code][d8c])* *([benchmarks][d8b])*
-*   **[Day 9 Reflections][d9r]** *([code][d9c])* *([benchmarks][d9b])*
-*   **[Day 10 Reflections][d10r]** *([code][d10c])* *([benchmarks][d10b])*
+*   **[Day 9 Reflections][d9r]** *([code][d9c])* *([benchmarks][d9b])* *([stream][d9s])*
+*   **[Day 10 Reflections][d10r]** *([code][d10c])* *([benchmarks][d10b])* *([stream][d10s])*
 
 [d1r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
 [d2r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
@@ -54,6 +54,9 @@ processes and how my solutions all work.  Benchmarks also included.
 [d8b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-8-benchmarks
 [d9b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-9-benchmarks
 [d10b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-10-benchmarks
+
+[d9s]: https://www.twitch.tv/videos/207969022
+[d10s]: https://www.twitch.tv/videos/208287550
 
 Executable
 ----------
@@ -147,9 +150,12 @@ This can be provided in `aoc2017-conf.yaml`:
 session:  [[ session token goes here ]]
 ```
 
-To aid in regression testing, the executable will also automatically verify
-that your current answers match the ones that have been previously submitted
-and confirmed correct.  These are expected in `data/ans/XXpart.txt`.  That is,
-the target output for Day 7 (Part 2, `b`) will be expected at
-`data/ans/07b.txt`.
+You can "lock in" your current answers (telling the executable that those are
+the correct answers) by passing in `--lock`.  This will lock in any final
+puzzle solutions encountered as the verified official answers.  Later, if you
+edit or modify your solutions, they will be checked on the locked-in answers.
+
+These are store in `data/ans/XXpart.txt`.  That is, the target output for Day 7
+(Part 2, `b`) will be expected at `data/ans/07b.txt`.  You can also manually
+edit these files.
 
