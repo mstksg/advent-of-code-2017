@@ -29,7 +29,8 @@ step :: KnownNat n => HashState n -> Finite n -> HashState n
 step (HS v0 p0 s0) n = HS v1 p1 s1
   where
     ixes = take (fromIntegral n) $ iterate (+ 1) p0
-    v1   = v0 V.// zip ixes (V.index v0 <$> reverse ixes)
+    vals = V.index v0 <$> ixes
+    v1   = v0 V.// zip ixes (reverse vals)
     p1   = p0 + n + modClass s0
     s1   = s0 + 1
 
@@ -39,11 +40,12 @@ day10a = show . product . take 2 . toList . _hsVec
        . map (finite . read @Integer) . splitOn ","
 
 day10b :: Challenge
-day10b = concatMap (printf "%02x" . foldr xor 0)
-       . chunksOf 16 . V.toList . _hsVec
+day10b = toHex . _hsVec
        . foldl' step (initHS @256)
-       . concat . replicate 64 . (++ salt) . map (fromIntegral . ord)
-       . T.unpack . T.strip . T.pack
+       . concat . replicate 64 . (++ salt)
+       . map (fromIntegral . ord) . strip
   where
-    salt = [17, 31, 73, 47, 23]
+    salt  = [17, 31, 73, 47, 23]
+    toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
+    strip = T.unpack . T.strip . T.pack
 
