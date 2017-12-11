@@ -23,29 +23,22 @@ import qualified Data.Map      as M
 
 challengeMap :: IM.IntMap (M.Map Char Challenge)
 challengeMap = IM.fromList
-    [ (1, M.fromList [('a', day01a)
-                     ,('b', day01b)])
-    , (2, M.fromList [('a', day02a)
-                     ,('b', day02b)])
-    , (3, M.fromList [('a', day03a)
-                     ,('b', day03b)])
-    , (4, M.fromList [('a', day04a)
-                     ,('b', day04b)])
-    , (5, M.fromList [('a', day05a)
-                     ,('b', day05b)])
-    , (6, M.fromList [('a', day06a)
-                     ,('b', day06b)])
-    , (7, M.fromList [('a', day07a)
-                     ,('b', day07b)])
-    , (8, M.fromList [('a', day08a)
-                     ,('b', day08b)])
-    , (9, M.fromList [('a', day09a)
-                     ,('b', day09b)])
-    , (10, M.fromList [('a', day10a)
-                      ,('b', day10b)])
-    , (11, M.fromList [('a', day11a)
-                      ,('b', day11b)])
-    , (12, M.fromList [('a', day12a)
-                      ,('b', day12b)])
+    [ (d, M.fromList [('a', ca),('b', cb)])
+    | (d, (ca, cb)) <- challenges
     ]
+
+challenges :: [(Int, (Challenge, Challenge))]
+challenges = [ ( 1, (day01a, day01b))
+             , ( 2, (day02a, day02b))
+             , ( 3, (day03a, day03b))
+             , ( 4, (day04a, day04b))
+             , ( 5, (day05a, day05b))
+             , ( 6, (day06a, day06b))
+             , ( 7, (day07a, day07b))
+             , ( 8, (day08a, day08b))
+             , ( 9, (day09a, day09b))
+             , (10, (day10a, day10b))
+             , (11, (day11a, day11b))
+             , (12, (day12a, day12b))
+             ]
 

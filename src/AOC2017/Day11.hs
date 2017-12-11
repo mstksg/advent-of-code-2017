@@ -32,6 +32,6 @@ day11a = show . distance UnboundedHexGrid (0,0)
        . parse
 
 day11b :: Challenge
-day11b = show . map (distance UnboundedHexGrid (0,0))
+day11b = show . maximum . map (distance UnboundedHexGrid (0,0))
        . scanl step (0,0)
        . parse
