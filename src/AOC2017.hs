@@ -14,6 +14,7 @@ import AOC2017.Day07 as AOC
 import AOC2017.Day08 as AOC
 import AOC2017.Day09 as AOC
 import AOC2017.Day10 as AOC
+import AOC2017.Day11 as AOC
 
 import           AOC2017.Types as AOC
 import qualified Data.IntMap   as IM
@@ -41,5 +42,7 @@ challengeMap = IM.fromList
                      ,('b', day09b)])
     , (10, M.fromList [('a', day10a)
                       ,('b', day10b)])
+    , (11, M.fromList [('a', day11a)
+                      ,('b', day11b)])
     ]
 

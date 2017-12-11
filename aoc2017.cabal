@@ -31,9 +31,11 @@ library
                        AOC2017.Day08
                        AOC2017.Day09
                        AOC2017.Day10
+                       AOC2017.Day11
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5.10.2
                      , finite-typelits
+                     , grid
                      , lens
                      , megaparsec
                      , mtl
