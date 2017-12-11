@@ -1127,7 +1127,7 @@ Day 11
 
 *([code][d11c])*
 
-[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day11.hs
+[d11c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day11.hs
 
 Nothing too interesting here!  Just a straightforward application of the great
 *[grid][]* library.
