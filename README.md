@@ -21,6 +21,7 @@ processes and how my solutions all work.  Benchmarks also included.
 *   **[Day 8 Reflections][d8r]** *([code][d8c])* *([benchmarks][d8b])*
 *   **[Day 9 Reflections][d9r]** *([code][d9c])* *([benchmarks][d9b])* *([stream][d9s])*
 *   **[Day 10 Reflections][d10r]** *([code][d10c])* *([benchmarks][d10b])* *([stream][d10s])*
+*   **[Day 11 Reflections][d11r]** *([code][d11c])* *([benchmarks][d11b])*
 
 [d1r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
 [d2r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
@@ -32,6 +33,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d8r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-8
 [d9r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-9
 [d10r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-10
+[d11r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-11
 
 [d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day01.hs
 [d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day02.hs
@@ -43,6 +45,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d8c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day08.hs
 [d9c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day09.hs
 [d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day10.hs
+[d11c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day11.hs
 
 [d1b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1-benchmarks
 [d2b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2-benchmarks
@@ -54,6 +57,7 @@ processes and how my solutions all work.  Benchmarks also included.
 [d8b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-8-benchmarks
 [d9b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-9-benchmarks
 [d10b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-10-benchmarks
+[d11b]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-11-benchmarks
 
 [d9s]: https://www.twitch.tv/videos/207969022
 [d10s]: https://www.twitch.tv/videos/208287550

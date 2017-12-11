@@ -1122,3 +1122,83 @@ std dev              6.425 ms   (1.676 ms .. 13.03 ms)
 variance introduced by outliers: 83% (severely inflated)
 ```
 
+Day 11
+------
+
+*([code][d11c])*
+
+[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day11.hs
+
+Nothing too interesting here!  Just a straightforward application of the great
+*[grid][]* library.
+
+[grid]: https://hackage.haskell.org/package/grid
+
+
+We barely need to wrap its `neighbor` function (which lets us move in a given
+direction) for our usage:
+
+```haskell
+step :: (Int, Int) -> HexDirection -> (Int, Int)
+step p = fromJust . neighbour UnboundedHexGrid p
+
+day11a :: [HexDireciton] -> Int
+day11a = distance UnboundedHexGrid (0,0) . foldl' step (0,0)
+```
+
+It's just a `foldl` of `neighbor`, and then finding the distance at the final
+point.
+
+And, like day 8's solution, all we need for Part 2 is to switch `foldl'` to
+`scanl`:
+
+```haskell
+day11a :: [HexDireciton] -> Int
+day11b = maximum . map (distance UnboundedHexGrid (0,0)) . scanl step (0,0)
+```
+
+`foldl` gives us the final position, but `scanl` gives us the intermediate
+ones.  We just map our distance function onto all of the intermediate positions
+to get a list of intermediate distances, and take the maximum of those.
+
+The most time consuming part was probably writing the parsing function:
+
+```haskell
+parse :: String -> [HexDirection]
+parse = map (parseDir . filter isAlpha) . splitOn ","
+  where
+    parseDir = \case
+      "nw" -> Northwest
+      "n"  -> North
+      "ne" -> Northeast
+      "se" -> Southeast
+      "s"  -> South
+      "sw" -> Southwest
+      d    -> error $ "Bad direction " ++ d
+```
+
+
+Much thanks to [Amy de Buitléir][mhwombat] for the library, which does most of
+the heavy lifting :)
+
+[mhwombat]: https://github.com/mhwombat
+
+### Day 11 Benchmarks
+
+```
+>> Day 11a
+benchmarking...
+time                 6.331 ms   (5.971 ms .. 6.778 ms)
+                     0.960 R²   (0.917 R² .. 0.992 R²)
+mean                 6.974 ms   (6.444 ms .. 8.575 ms)
+std dev              2.855 ms   (528.3 μs .. 5.360 ms)
+variance introduced by outliers: 97% (severely inflated)
+
+>> Day 11b
+benchmarking...
+time                 7.267 ms   (7.017 ms .. 7.503 ms)
+                     0.988 R²   (0.976 R² .. 0.995 R²)
+mean                 7.337 ms   (7.172 ms .. 7.586 ms)
+std dev              563.7 μs   (392.0 μs .. 794.2 μs)
+variance introduced by outliers: 44% (moderately inflated)
+```
