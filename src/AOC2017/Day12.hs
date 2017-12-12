@@ -1,39 +1,36 @@
--- module AOC2017.Day12 (day12a, day12b) where
-
 {-# LANGUAGE ViewPatterns #-}
-module AOC2017.Day12 where
 
-import           AOC2017.Types  (Challenge)
-import           Data.Char
-import           Data.List
-import qualified Data.Set       as S
+module AOC2017.Day12 (day12a, day12b) where
 
-parse :: String -> S.Set Int
-parse (words->n:_:ns) = S.fromList $ read n
-                                   : (read . filter isDigit <$> ns)
-parse _ = error "No parse"
+import           AOC2017.Types (Challenge)
+import           Data.Char     (isDigit)
+import           Data.List     (foldl', find)
+import           Data.Maybe    (fromJust)
+import qualified Data.IntSet   as IS
+import qualified Data.Set      as S
 
-pass :: S.Set Int -> [S.Set Int] -> S.Set Int
-pass = foldl' go
-  where
-    go s1 s2 | null (s1 `S.intersection` s2) = s1
-             | otherwise                     = s1 `S.union` s2
+newtype DisjointGroups = DG { getDG :: S.Set IS.IntSet }
+instance Monoid DisjointGroups where
+    mempty        = DG S.empty
+    -- | mappend is much faster if the smaller set is second
+    mappend xs ys = foldl' go ys (S.toList (getDG xs))
+      where
+        go (DG zs) z = DG (newGroup `S.insert` disjoints)
+          where
+            overlaps  = S.filter (not . IS.null . (`IS.intersection` z)) zs
+            disjoints = zs `S.difference` overlaps
+            newGroup  = IS.unions $ z : S.toList overlaps
 
-untilEq :: Eq a => (a -> b -> a) -> a -> b -> a
-untilEq f x y | z == x    = z
-              | otherwise = untilEq f z y
-  where
-    z = f x y
+parseLine :: String -> IS.IntSet
+parseLine (words->n:_:ns) = IS.fromList $ read n
+                                        : (read . filter isDigit <$> ns)
+parseLine _ = error "No parse"
+
+build :: String -> DisjointGroups
+build = foldMap (DG . S.singleton . parseLine) . lines
 
 day12a :: Challenge
-day12a = show . S.size . untilEq pass (S.singleton 0) . map parse . lines
+day12a = show . IS.size . fromJust . find (0 `IS.member`) . getDG . build
 
 day12b :: Challenge
-day12b inp = show
-           . S.size
-           . S.map (\i -> untilEq pass (S.singleton i) inpList)
-           $ allNums
-  where
-    inpList = parse <$> lines inp
-    allNums :: S.Set Int
-    allNums = S.unions inpList
+day12b = show . S.size . getDG . build

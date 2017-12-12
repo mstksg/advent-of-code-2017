@@ -115,7 +115,7 @@ runAll sess lock f = fmap void          $
     printf ">> Day %02d%c\n" d p
     dat <- getData d p
     when lock . forM_ (_cdInp dat) $ \inp ->
-      writeFile (ansFn d p) $ c inp
+      writeFile (ansFn d p) =<< evaluate (force (c inp))
     f c =<< getData d p
   where
     getData :: Int -> Char -> IO ChallengeData
