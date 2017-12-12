@@ -9,6 +9,7 @@ import           Data.Maybe    (fromJust)
 import qualified Data.IntSet   as IS
 import qualified Data.Set      as S
 
+-- | Monoid representing a collection of disjoint "connected sets"
 newtype Disjoints = D { getD :: S.Set IS.IntSet }
 instance Monoid Disjoints where
     mempty        = D S.empty
