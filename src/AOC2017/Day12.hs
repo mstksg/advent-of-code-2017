@@ -9,13 +9,13 @@ import           Data.Maybe    (fromJust)
 import qualified Data.IntSet   as IS
 import qualified Data.Set      as S
 
-newtype DisjointGroups = DG { getDG :: S.Set IS.IntSet }
-instance Monoid DisjointGroups where
-    mempty        = DG S.empty
+newtype Disjoints = D { getD :: S.Set IS.IntSet }
+instance Monoid Disjoints where
+    mempty        = D S.empty
     -- | mappend is much faster if the smaller set is second
-    mappend xs ys = foldl' go ys (S.toList (getDG xs))
+    mappend xs ys = foldl' go ys (S.toList (getD xs))
       where
-        go (DG zs) z = DG (newGroup `S.insert` disjoints)
+        go (D zs) z = D (newGroup `S.insert` disjoints)
           where
             overlaps  = S.filter (not . IS.null . (`IS.intersection` z)) zs
             disjoints = zs `S.difference` overlaps
@@ -23,14 +23,16 @@ instance Monoid DisjointGroups where
 
 parseLine :: String -> IS.IntSet
 parseLine (words->n:_:ns) = IS.fromList $ read n
-                                        : (read . filter isDigit <$> ns)
-parseLine _ = error "No parse"
+                                        : map (read . filter isDigit) ns
+parseLine _               = error "No parse"
 
-build :: String -> DisjointGroups
-build = foldMap (DG . S.singleton . parseLine) . lines
+build :: String -> Disjoints
+build = foldMap (D . S.singleton . parseLine) . lines
 
 day12a :: Challenge
-day12a = show . IS.size . fromJust . find (0 `IS.member`) . getDG . build
+day12a = show . IS.size . fromJust . find (0 `IS.member`)
+       . getD . build
 
 day12b :: Challenge
-day12b = show . S.size . getDG . build
+day12b = show . S.size
+       . getD . build

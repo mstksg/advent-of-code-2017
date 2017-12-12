@@ -1202,3 +1202,97 @@ mean                 7.337 ms   (7.172 ms .. 7.586 ms)
 std dev              563.7 μs   (392.0 μs .. 794.2 μs)
 variance introduced by outliers: 44% (moderately inflated)
 ```
+
+Day 12
+------
+
+*([code][d12c])*
+
+[d12c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day12.hs
+
+For Day 12, I made a monoid that is collection of disjoint sets, which we use
+to model the set of distinct "groups" in our puzzle.  The sets represent things
+that are all interconnected.
+
+```haskell
+newtype Disjoints = D { getD :: S.Set IS.IntSet }
+instance Monoid Disjoints where
+    mempty        = D S.empty
+    mappend xs ys = foldl' go ys (S.toList (getD xs))
+      where
+        go (D zs) z = D (newGroup `S.insert` disjoints)
+          where
+            overlaps  = S.filter (not . IS.null . (`IS.intersection` z)) zs
+            disjoints = zs `S.difference` overlaps
+            newGroup  = IS.unions $ z : S.toList overlaps
+
+```
+
+The mappend action is union, but preserving disjoint connection property.  If
+we assume that all items in a set are connected, then the merger of two
+collections of disjoint groups will be a new collection of disjoint groups,
+merging together any of the original sets if it is found out that their items
+have any connections.
+
+For example, merging `DG [[3,5],[8,9],[10,11]]` with `DG [[5,6,8]]` will give
+`DG [[3,5,6,8,9], [10,11]]`.
+
+Now our entire thing is just a `foldMap`.  If we treat each of the original
+lines as `IS.IntSet`, a set of connected things:
+
+
+```haskell
+build :: [IS.IntSet] -> Disjoints
+build = foldMap (D . S.singleton)
+```
+
+where `D . S.singleton :: IS.IntSet -> Disjoints`, the "single group"
+`Disjoints`.
+
+From here, querying for the size of the group containing `0`, and the number of
+groups total, is pretty simple:
+
+
+```haskell
+day12a :: [IS.IntSet] -> Int
+day12a = IS.size . fromJust
+       . find (0 `IS.member`)
+       . getD . build
+
+day12b :: [IS.IntSet] -> Int
+day12b = S.size . getD . build
+```
+
+Part 2 is even simpler than Part 1!
+
+Parsing is again straightforward:
+
+```haskell
+parseLine :: String -> IS.IntSet
+parseLine (words->n:_:ns) = IS.fromList $ read n
+                                        : map (read . filter isDigit) ns
+parseLine _               = error "No parse"
+
+parse :: String -> [IS.IntSet]
+parse = map parseLine . lines
+```
+
+### Day 12 Benchmarks
+
+```
+>> Day 12a
+benchmarking...
+time                 53.76 ms   (44.69 ms .. 59.42 ms)
+                     0.961 R²   (0.859 R² .. 0.999 R²)
+mean                 58.32 ms   (54.25 ms .. 73.01 ms)
+std dev              12.51 ms   (1.563 ms .. 21.58 ms)
+variance introduced by outliers: 73% (severely inflated)
+
+>> Day 12b
+benchmarking...
+time                 51.23 ms   (44.52 ms .. 55.72 ms)
+                     0.973 R²   (0.925 R² .. 0.998 R²)
+mean                 59.26 ms   (54.50 ms .. 76.39 ms)
+std dev              15.13 ms   (3.328 ms .. 26.23 ms)
+variance introduced by outliers: 82% (severely inflated)
+```
