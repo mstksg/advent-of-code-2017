@@ -13,7 +13,7 @@ newtype Disjoints = D { getD :: S.Set IS.IntSet }
 instance Monoid Disjoints where
     mempty        = D S.empty
     -- | mappend is much faster if the smaller set is second
-    mappend xs ys = foldl' go ys (S.toList (getD xs))
+    mappend xs ys = foldl' go ys (getD xs)
       where
         go (D zs) z = D (newGroup `S.insert` disjoints)
           where
