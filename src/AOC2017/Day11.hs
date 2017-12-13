@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module AOC2017.Day11 (day11a, day11b) where
 
 import           AOC2017.Types                         (Challenge)

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns    #-}
 
@@ -6,6 +7,8 @@ module AOC2017 (
   , challengeMap
   , ChallengePaths(..), challengePaths
   , ChallengeData(..), challengeData
+  , Config(..), configFile, defConfPath
+  , session
   , strip
   ) where
 
@@ -30,13 +33,17 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Data.Foldable
 import           Data.List
+import           GHC.Generics               (Generic)
 import           Network.Curl
 import           System.FilePath
 import           System.IO.Error
 import           Text.Printf
+import qualified Data.Aeson                 as A
+import qualified Data.ByteString            as BS
 import qualified Data.IntMap                as IM
 import qualified Data.Map                   as M
 import qualified Data.Text                  as T
+import qualified Data.Yaml                  as Y
 
 challengeMap :: IM.IntMap (M.Map Char Challenge)
 challengeMap = IM.fromList
@@ -65,11 +72,6 @@ data ChallengePaths = CP { _cpDataUrl :: !FilePath
                          , _cpTests   :: !FilePath
                          }
   deriving Show
-
-    -- dataUrl     = printf "http://adventofcode.com/2017/day/%d/input"
-    -- inpFn   d   = "data"     </> printf "%02d" d <.> "txt"
-    -- ansFn   d p = "data/ans" </> printf "%02d%c" d p <.> "txt"
-    -- testsFn d p = "test-data" </> printf "%02d%c" d p <.> "txt"
 
 data ChallengeData = CD { _cdInp   :: !(Either [String] String)
                         , _cdAns   :: !(Maybe String)
@@ -133,6 +135,43 @@ challengeData sess d p = do
         | otherwise ->
             let ans' = ans <$ guard (not (null ans))
             in  (inp, ans') : parseTests rest
+
+data Config = Cfg { _cfgSession :: Maybe String }
+  deriving (Generic)
+
+defConfPath :: FilePath
+defConfPath = "aoc2017-conf.yaml"
+
+configFile :: FilePath -> IO Config
+configFile fp = do
+    cfgInp <- tryJust (guard . isDoesNotExistError)
+            $ BS.readFile fp
+    case cfgInp of
+      Left () -> do
+        Y.encodeFile fp emptyCfg
+        return emptyCfg
+      Right b -> do
+        case Y.decodeEither b of
+          Left e -> do
+            printf "Configuration file at %s could not be parsed:\n" fp
+            print e
+            return emptyCfg
+          Right cfg -> return cfg
+  where
+    emptyCfg = Cfg Nothing
+
+session :: FilePath -> IO (Maybe String)
+session = fmap _cfgSession . configFile
+
+configJSON :: A.Options
+configJSON = A.defaultOptions
+    { A.fieldLabelModifier = A.camelTo2 '-' . drop 4 }
+
+instance A.ToJSON Config where
+    toJSON     = A.genericToJSON configJSON
+    toEncoding = A.genericToEncoding configJSON
+instance A.FromJSON Config where
+    parseJSON  = A.genericParseJSON configJSON
 
 strip :: String -> String
 strip = T.unpack . T.strip . T.pack

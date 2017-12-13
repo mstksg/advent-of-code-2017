@@ -1,16 +1,9 @@
 {-# LANGUAGE ApplicativeDo   #-}
 {-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns    #-}
 
--- import           Control.Monad.IO.Class
--- import           Control.Monad.Trans.Except
--- import           Data.Foldable
--- import           Data.List
--- import           Network.Curl
--- import           System.FilePath
 import           AOC2017
 import           Control.Applicative
 import           Control.DeepSeq
@@ -21,17 +14,12 @@ import           Data.Char
 import           Data.Finite
 import           Data.Maybe
 import           Data.Semigroup
-import           GHC.Generics                  (Generic)
 import           Options.Applicative
-import           System.IO.Error
 import           Text.Printf
 import           Text.Read
-import qualified Data.Aeson                    as A
-import qualified Data.ByteString               as BS
-import qualified Data.IntMap                   as IM
-import qualified Data.Map                      as M
-import qualified Data.Yaml                     as Y
-import qualified System.Console.ANSI           as ANSI
+import qualified Data.IntMap         as IM
+import qualified Data.Map            as M
+import qualified System.Console.ANSI as ANSI
 
 data TestSpec = TSAll
               | TSDayAll  { _tsDay  :: Finite 25 }
@@ -46,9 +34,6 @@ data Opts = O { _oTestSpec :: TestSpec
               , _oLock     :: Bool
               , _oConfig   :: Maybe FilePath
               }
-
-data Config = Cfg { _cfgSession :: Maybe String }
-  deriving (Generic)
 
 main :: IO ()
 main = do
@@ -184,32 +169,4 @@ parseOpts = do
         [p] | isAlpha p -> Right (toLower p)
             | otherwise -> Left "Invalid part (not an alphabet letter)"
         _   -> Left "Invalid part (not a single alphabet letter)"
-
-configFile :: FilePath -> IO Config
-configFile fp = do
-    cfgInp <- tryJust (guard . isDoesNotExistError)
-            $ BS.readFile fp
-    case cfgInp of
-      Left () -> do
-        Y.encodeFile fp emptyCfg
-        return emptyCfg
-      Right b -> do
-        case Y.decodeEither b of
-          Left e -> do
-            printf "Configuration file at %s could not be parsed:\n" fp
-            print e
-            return emptyCfg
-          Right cfg -> return cfg
-  where
-    emptyCfg = Cfg Nothing
-
-configJSON :: A.Options
-configJSON = A.defaultOptions
-    { A.fieldLabelModifier = A.camelTo2 '-' . drop 4 }
-
-instance A.ToJSON Config where
-    toJSON     = A.genericToJSON configJSON
-    toEncoding = A.genericToEncoding configJSON
-instance A.FromJSON Config where
-    parseJSON  = A.genericParseJSON configJSON
 
