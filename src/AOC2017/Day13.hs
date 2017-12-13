@@ -6,22 +6,13 @@ import           Data.Foldable
 import           Data.Maybe
 
 
-scanner
-    :: Int  -- depth
-    -> Int  -- shift
-    -> Int
-scanner d = triangle (d - 1)
+caughtAt
+    :: Int          -- delay
+    -> (Int, Int)   -- depth, range
+    -> Bool
+caughtAt delay (d, r) = triangle (r - 1) (d + delay) == 0
   where
     triangle n x = abs ((x - n) `mod` (n * 2) - n)
-
-run :: Int
-    -> [(Int,Int)]
-    -> [(Int, Int)]
-run delay = mapMaybe sneak
-  where
-    sneak (n, d)
-      | scanner d (n + delay) == 0 = Just (n, d)
-      | otherwise                  = Nothing
 
 parse :: String -> [(Int, Int)]
 parse = map parseLine . lines
@@ -30,8 +21,11 @@ parse = map parseLine . lines
     parseLine _              = error "No parse"
 
 day13a :: Challenge
-day13a = show . sum . map (uncurry (*)) . run 0 . parse
+day13a = show . sum . map (uncurry (*))
+       . filter (caughtAt 0)
+       . parse
 
 day13b :: Challenge
-day13b (parse->xs) = show . fromJust . flip find [0..] $ \d ->
-      null (run d xs)
+day13b (parse->xs) = show . fromJust $ find neverCaughtWith [0..]
+  where
+    neverCaughtWith delay = all (not . caughtAt delay) xs
