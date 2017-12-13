@@ -35,6 +35,9 @@ library
                        AOC2017.Day12
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.5.10.2
+                     , curl
+                     , deepseq
+                     , filepath
                      , finite-typelits
                      , grid
                      , lens
@@ -59,13 +62,10 @@ executable aoc2017
                      , bytestring
                      , containers
                      , criterion
-                     , curl
                      , deepseq
-                     , filepath
                      , finite-typelits
                      , optparse-applicative
                      , text
-                     , transformers
                      , yaml
   default-language:    Haskell2010
 

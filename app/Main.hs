@@ -5,34 +5,33 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns    #-}
 
+-- import           Control.Monad.IO.Class
+-- import           Control.Monad.Trans.Except
+-- import           Data.Foldable
+-- import           Data.List
+-- import           Network.Curl
+-- import           System.FilePath
 import           AOC2017
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Exception
 import           Control.Monad
-import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Except
 import           Criterion
 import           Data.Char
 import           Data.Finite
-import           Data.Foldable
-import           Data.List
 import           Data.Maybe
 import           Data.Semigroup
-import           GHC.Generics                (Generic)
-import           Network.Curl
+import           GHC.Generics                  (Generic)
 import           Options.Applicative
-import           System.FilePath
 import           System.IO.Error
 import           Text.Printf
 import           Text.Read
-import qualified Data.Aeson                  as A
-import qualified Data.ByteString             as BS
-import qualified Data.IntMap                 as IM
-import qualified Data.Map                    as M
-import qualified Data.Text                   as T
-import qualified Data.Yaml                   as Y
-import qualified System.Console.ANSI         as ANSI
+import qualified Data.Aeson                    as A
+import qualified Data.ByteString               as BS
+import qualified Data.IntMap                   as IM
+import qualified Data.Map                      as M
+import qualified Data.Yaml                     as Y
+import qualified System.Console.ANSI           as ANSI
 
 data TestSpec = TSAll
               | TSDayAll  { _tsDay  :: Finite 25 }
@@ -47,11 +46,6 @@ data Opts = O { _oTestSpec :: TestSpec
               , _oLock     :: Bool
               , _oConfig   :: Maybe FilePath
               }
-
-data ChallengeData = CD { _cdInp   :: !(Either [String] String)
-                        , _cdAns   :: !(Maybe String)
-                        , _cdTests :: ![(String, Maybe String)]
-                        }
 
 data Config = Cfg { _cfgSession :: Maybe String }
   deriving (Generic)
@@ -112,58 +106,13 @@ runAll
 runAll sess lock f = fmap void          $
                      IM.traverseWithKey $ \d ->
                      M.traverseWithKey  $ \p c -> do
+    let CP{..} = challengePaths d p
     printf ">> Day %02d%c\n" d p
-    dat <- getData d p
-    when lock . forM_ (_cdInp dat) $ \inp ->
-      writeFile (ansFn d p) =<< evaluate (force (c inp))
-    f c =<< getData d p
-  where
-    getData :: Int -> Char -> IO ChallengeData
-    getData d p = do
-        inp   <- runExceptT . asum $
-          [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe (inpFn d)
-          , fetchInput
-          ]
-        ans   <- readFileMaybe (ansFn d p)
-        ts    <- foldMap (parseTests . lines) <$> readFileMaybe (testsFn d p)
-        return $ CD inp ans ts
-      where
-        fileErr :: String
-        fileErr = printf "Input file not found at %s" (inpFn d)
-        fetchInput :: ExceptT [String] IO String
-        fetchInput = do
-          s <- maybe (throwE ["Session key needed to fetch input"]) return
-            sess
-          (cc, r) <- liftIO . withCurlDo . curlGetString (dataUrl d) $
-              CurlCookie (printf "session=%s" s) : method_GET
-          case cc of
-            CurlOK -> return ()
-            _      -> throwE [ "Error contacting advent of code server to fetch input"
-                             , "Possible invalid session key"
-                             , printf "Url: %s" (dataUrl d)
-                             , printf "Server response: %s" r
-                             ]
-          liftIO $ writeFile (inpFn d) r
-          return r
-    parseTests :: [String] -> [(String, Maybe String)]
-    parseTests xs = case break (">>> " `isPrefixOf`) xs of
-      (strip.unlines->inp,[])
-        | null inp  -> []
-        | otherwise -> [(inp, Nothing)]
-      (strip.unlines->inp,(strip.drop 4->ans):rest)
-        | null inp  -> parseTests rest
-        | otherwise ->
-            let ans' = ans <$ guard (not (null ans))
-            in  (inp, ans') : parseTests rest
-    readFileMaybe :: FilePath -> IO (Maybe String)
-    readFileMaybe =
-        (traverse (evaluate . force) . either (const Nothing) Just =<<)
-       . tryJust (guard . isDoesNotExistError)
-       . readFile
-    dataUrl     = printf "http://adventofcode.com/2017/day/%d/input"
-    inpFn   d   = "data"     </> printf "%02d" d <.> "txt"
-    ansFn   d p = "data/ans" </> printf "%02d%c" d p <.> "txt"
-    testsFn d p = "test-data" </> printf "%02d%c" d p <.> "txt"
+    when lock $ do
+      CD{..} <- challengeData sess d p
+      forM_ _cdInp $ \inp ->
+        writeFile _cpAnswer =<< evaluate (force (c inp))
+    f c =<< challengeData sess d p
 
 testCase
     :: Bool
@@ -253,9 +202,6 @@ configFile fp = do
           Right cfg -> return cfg
   where
     emptyCfg = Cfg Nothing
-
-strip :: String -> String
-strip = T.unpack . T.strip . T.pack
 
 configJSON :: A.Options
 configJSON = A.defaultOptions
