@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module AOC2017.Day12 (day12a, day12b) where
 
 import           AOC2017.Types (Challenge)

@@ -1,6 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ViewPatterns  #-}
-
 module AOC2017.Day07 (day07a, day07b) where
 
 import           AOC2017.Types       (Challenge)
