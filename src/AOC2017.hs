@@ -24,6 +24,7 @@ import           AOC2017.Day09 as AOC
 import           AOC2017.Day10 as AOC
 import           AOC2017.Day11 as AOC
 import           AOC2017.Day12 as AOC
+import           AOC2017.Day13 as AOC
 
 import           AOC2017.Types              as AOC
 import           Control.DeepSeq
@@ -64,6 +65,7 @@ challenges = [ ( 1, (day01a, day01b))
              , (10, (day10a, day10b))
              , (11, (day11a, day11b))
              , (12, (day12a, day12b))
+             , (13, (day13a, day13b))
              ]
 
 data ChallengePaths = CP { _cpDataUrl :: !FilePath
