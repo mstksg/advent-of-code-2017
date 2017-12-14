@@ -9,7 +9,6 @@ module AOC2017 (
   , ChallengeData(..), challengeData
   , Config(..), configFile, defConfPath
   , session
-  , strip
   ) where
 
 import           AOC2017.Day01 as AOC
@@ -25,8 +24,10 @@ import           AOC2017.Day10 as AOC
 import           AOC2017.Day11 as AOC
 import           AOC2017.Day12 as AOC
 import           AOC2017.Day13 as AOC
+import           AOC2017.Day14 as AOC
 
 import           AOC2017.Types              as AOC
+import           AOC2017.Util               as AOC
 import           Control.DeepSeq
 import           Control.Exception
 import           Control.Monad
@@ -43,7 +44,6 @@ import qualified Data.Aeson                 as A
 import qualified Data.ByteString            as BS
 import qualified Data.IntMap                as IM
 import qualified Data.Map                   as M
-import qualified Data.Text                  as T
 import qualified Data.Yaml                  as Y
 
 challengeMap :: IM.IntMap (M.Map Char Challenge)
@@ -66,6 +66,7 @@ challenges = [ ( 1, (day01a, day01b))
              , (11, (day11a, day11b))
              , (12, (day12a, day12b))
              , (13, (day13a, day13b))
+             , (14, (day14a, day14b))
              ]
 
 data ChallengePaths = CP { _cpDataUrl :: !FilePath
@@ -174,7 +175,4 @@ instance A.ToJSON Config where
     toEncoding = A.genericToEncoding configJSON
 instance A.FromJSON Config where
     parseJSON  = A.genericParseJSON configJSON
-
-strip :: String -> String
-strip = T.unpack . T.strip . T.pack
 

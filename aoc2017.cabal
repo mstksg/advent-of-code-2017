@@ -21,6 +21,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     AOC2017
                        AOC2017.Types
+                       AOC2017.Util
   other-modules:       AOC2017.Day01
                        AOC2017.Day02
                        AOC2017.Day03
@@ -34,6 +35,7 @@ library
                        AOC2017.Day11
                        AOC2017.Day12
                        AOC2017.Day13
+                       AOC2017.Day14
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , bytestring

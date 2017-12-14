@@ -1296,3 +1296,48 @@ mean                 59.26 ms   (54.50 ms .. 76.39 ms)
 std dev              15.13 ms   (3.328 ms .. 26.23 ms)
 variance introduced by outliers: 82% (severely inflated)
 ```
+
+Day 13
+------
+
+*([code][d13c])*
+
+[d13c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day13.hs
+
+Day 13 is a puzzle that reveals itself nicely after putting in a moment to
+think of some analytic solutions.
+
+The motion of the scanners follows a [Triangle Wave][].  I picked up the
+equation on the wikipedia page:
+
+[Triangle Wave]: https://en.wikipedia.org/wiki/Triangle_wave
+
+```haskell
+triangle range t = abs ((t - range) `mod` (range * 2) - range)
+```
+
+This is a triangle wave starting at zero, that goes from `0` to `range`.
+
+It's probably not the cleanest solution, but it works ok as a direct
+translation!  We also don't need the `abs`, since we only care about when
+`triangle range t == 0`, but it doesn't hurt to leave it there for clarity.
+
+Now we can write a function to see if you are caught at a given depth and
+range:
+
+```
+caughtAt
+    :: Int          -- delay
+    -> (Int, Int)   -- depth, range
+    -> Bool
+caughtAt delay (d, r) = triangle (r - 1) (d + delay) == 0
+```
+
+Our `range` is actually one less than `triangle`'s expected range (we travel
+from `0` to `r-1`).  And, `t` is `depth + delay`.  That is, if our initial
+delay is 0, then `t = depth` -- it will take us `depth` picoseconds to get to
+that given depth.  In general, it will take us `depth + delay` picoseconds to
+get to a given depth -- a contribution from waiting to start, and a
+contribution from the time it will take to actually reach that depth once we
+start.
+
