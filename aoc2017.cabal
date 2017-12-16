@@ -57,10 +57,12 @@ library
                      , vector-sized
                      , yaml
   default-language:    Haskell2010
-  default-extensions:  DeriveFoldable
+  default-extensions:  BangPatterns
+                       DeriveFoldable
                        DeriveFunctor
                        DeriveTraversable
                        LambdaCase
+                       MultiWayIf
                        NumDecimals
                        RecordWildCards
                        ScopedTypeVariables
