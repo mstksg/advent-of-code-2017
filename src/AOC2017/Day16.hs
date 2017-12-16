@@ -39,10 +39,8 @@ day16a = V.toList
        . parse
 
 day16b :: Challenge
-day16b (parse->moves) = V.toList
-                      . foldl' step initial
-                      . concat
-                      $ replicate leftovers moves
+day16b (parse->moves) = V.toList $
+    iterate oneCycle initial !! leftovers
   where
     oneCycle xs = foldl' step xs moves
     loopLength = (+ 1)
