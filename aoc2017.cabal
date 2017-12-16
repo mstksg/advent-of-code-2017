@@ -36,6 +36,8 @@ library
                        AOC2017.Day12
                        AOC2017.Day13
                        AOC2017.Day14
+                       AOC2017.Day15
+                       AOC2017.Day16
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , bytestring

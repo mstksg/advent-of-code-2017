@@ -23,23 +23,18 @@ instance Monoid Disjoints where
             disjoints = zs `S.difference` overlaps
             newGroup  = IS.unions $ z : S.toList overlaps
 
-neighbors :: (Int, Int) -> [(Int, Int)]
-neighbors (x,y) = [ (x+dx, y+dy) | (dx, dy) <- [(0,1),(0,-1),(1,0),(-1,0)]
-                                 , x+dx >= 0
-                                 , y+dy >= 0
-                                 , x+dx < 128
-                                 , y+dy < 128
-                  ]
-
-day14a :: Challenge
-day14a = show . length . filter id . concat . gridUp
-
 gridUp :: String -> [[Bool]]
 gridUp (strip->k) = map mkRow [0..127]
   where
     mkRow :: Int -> [Bool]
     mkRow n = concatMap hexToBits . day10b $ k ++ "-" ++ show n
+    hexToBits :: Char -> [Bool]
+    hexToBits = (binaries !!) . digitToInt
+    binaries :: [[Bool]]
+    binaries = replicateM 4 [False,True]
 
+day14a :: Challenge
+day14a = show . length . filter id . concat . gridUp
 
 day14b :: Challenge
 day14b (gridUp->grid) = show . S.size . getD $ foldMap go (range r)
@@ -54,7 +49,11 @@ day14b (gridUp->grid) = show . S.size . getD $ foldMap go (range r)
                   $ neighbors p
       | otherwise = mempty
 
-hexToBits :: Char -> [Bool]
-hexToBits = (binaries !!) . digitToInt
-  where
-    binaries = replicateM 4 [False,True]
+neighbors :: (Int, Int) -> [(Int, Int)]
+neighbors (x,y) = [ (x+dx, y+dy) | (dx, dy) <- [(0,1),(0,-1),(1,0),(-1,0)]
+                                 , x+dx >= 0
+                                 , y+dy >= 0
+                                 , x+dx < 128
+                                 , y+dy < 128
+                  ]
+
