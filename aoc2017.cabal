@@ -57,14 +57,16 @@ library
                      , vector-sized
                      , yaml
   default-language:    Haskell2010
-  default-extensions:  ViewPatterns
-                       DeriveFoldable
+  default-extensions:  DeriveFoldable
                        DeriveFunctor
                        DeriveTraversable
                        LambdaCase
+                       NumDecimals
                        RecordWildCards
                        ScopedTypeVariables
                        TupleSections
+                       TypeApplications
+                       ViewPatterns
   ghc-options:         -Wall
 
 executable aoc2017

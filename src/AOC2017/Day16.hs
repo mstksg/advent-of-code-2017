@@ -49,4 +49,4 @@ day16b (parse->moves) = V.toList $
                . drop 1
                . iterate oneCycle
                $ initial
-    leftovers = 1000000000 `mod` loopLength
+    leftovers = 1e9 `mod` loopLength
