@@ -2,6 +2,7 @@ module AOC2017.Day16 (day16a, day16b) where
 
 -- import qualified Numeric.LinearAlgebra.Static as H
 import           AOC2017.Types                   (Challenge)
+import           Control.Lens
 import           Data.Char
 import           Data.List                       (foldl')
 import           Data.List.Split                 (splitOn)
@@ -22,55 +23,39 @@ instance Monoid Dance where
     mappend = (<>)
     mempty = D (H.ident 16) (H.ident 16)
 
-permVec :: H.Vector H.I -> H.Matrix Double
-permVec v = H.ident 16 H.?? (H.PosCyc v, H.All)
+runDance :: Dance -> String
+runDance d = V.toList . runNamePerm . runPosPerm $ V.fromList ['a' .. 'p']
+  where
+    runNamePerm = 
+
+permVec :: [Int] -> H.Matrix Double
+permVec (take 16->v) = H.ident 16 H.?? (H.PosCyc (H.idxs v), H.All)
 
 spin :: Int -> Dance
-spin n = mempty { _dPosPerm = permVec $
-                      16 H.|> drop (n - 1) (cycle [0..15])
+spin n = mempty { _dPosPerm = permVec . drop (16 - n) . cycle $ [0..15]
                 }
-
-swap :: Int -> Int -> Dance
-swap i j = mempty { _dPosPerm = permVec $ H.assoc 16 0
-                        [ (fromIntegral k, fromIntegral x) | k <- [0..15]
-                                              , let x | x == i = j
-                                                      | x == j = i
-                                                      | otherwise = k
-                        ]
+exch :: Int -> Int -> Dance
+exch i j = mempty { _dPosPerm = permVec $ [0..15] & ix i .~ j
+                                                  & ix j .~ i
                   }
+part :: Char -> Char -> Dance
+part i j = mempty { _dNamePerm = permVec $ [0..15] & ix i' .~ j'
+                                                   & ix j' .~ i'
+                  }
+  where
+    i' = ord i - ord 'a'
+    j' = ord j - ord 'a'
 
--- -- spin (someNatVal->SomeNat (Proxy :: Proxy n)) =
--- --       let (top, bottom) = H.splitRows @n @16 @16 H.eye
--- --       in  D (bottom H.=== top) H.eye
 
--- partner :: Char -> Char -> Dance
--- partner (charIx->x) (charIx->y) = D H.eye . H.build $ \i j ->
-
--- charIx :: Char -> Int
--- charIx = subtract (ord 'a') . ord
-
--- data Move = MSpin     Int
---           | MExchange Int  Int
---           | MPartner  Char Char
-
--- step :: V.Vector Char -> Move -> V.Vector Char
--- step v0 = \case
---   MSpin n       -> let (x,y) = V.splitAt (16 - n) v0
---                    in  y V.++ x
---   MExchange n m -> v0 V.// [(n, v0 V.! m),(m, v0 V.! n)]
---   MPartner n m  -> let Just iN = V.findIndex (== n) v0
---                        Just iM = V.findIndex (== m) v0
---                    in  v0 V.// [(iN, m),(iM, n)]
-
--- parse :: String -> DancePerm
--- parse = foldMap parseMove . splitOn ","
---   where
---     parseMove :: String -> DancePerm
---     parseMove = \case
---       's':(read->n)            -> MSpin n
---       'x':(splitOn "/"->n:m:_) -> MExchange (read n) (read m)
---       'p':n:_:m:_              -> MPartner n m
---       _                        -> error "No parse"
+parse :: String -> Dance
+parse = foldMap parseMove . splitOn ","
+  where
+    parseMove :: String -> Dance
+    parseMove = \case
+      's':(read->n)            -> spin n
+      'x':(splitOn "/"->n:m:_) -> exch (read n) (read m)
+      'p':n:_:m:_              -> part n m
+      _                        -> error "No parse"
 
 initial :: V.Vector Char
 initial = V.fromList ['a' .. 'p']
