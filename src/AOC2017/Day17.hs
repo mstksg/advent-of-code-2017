@@ -2,9 +2,8 @@
 module AOC2017.Day17  where
 
 import           AOC2017.Types      (Challenge)
-import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty(..))
-import           Data.Monoid
+import           Data.Maybe         (mapMaybe)
 import qualified Data.List.NonEmpty as NE
 
 (!!!) :: [a] -> Int -> a
@@ -17,11 +16,6 @@ data Tape a = Tape { _tLefts  :: ![a]
                    , _tRights :: ![a]
                    }
   deriving Show
-
-instance Foldable Tape where
-    foldMap f (Tape ls x rs) = foldMap f (reverse ls)
-                            <> f x
-                            <> foldMap f rs
 
 move :: Tape a -> Tape a
 move (Tape ls x rs) = case rs of
@@ -43,10 +37,12 @@ day17a :: Challenge
 day17a (read->n) = show . head . _tRights $ run n !!! 2017
 
 day17b :: Challenge
-day17b (read->n) = show . fst . last
-                 . filter ((== 1) . snd)
-                 $ zip [0 ..] locs
+day17b (read->n) = show . last
+                 . mapMaybe (\(x, p) -> [ x | p == 1 ])
+                 . take 5e7
+                 $ zip @Int @Int [0 ..] insertionPoints
   where
-    locs = scanl go 0 [1..5e7]
+    insertionPoints :: [Int]
+    insertionPoints = scanl go 0 [1..]
       where
         go i x = ((i + n) `mod` x) + 1

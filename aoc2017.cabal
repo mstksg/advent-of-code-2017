@@ -63,6 +63,7 @@ library
                        DeriveFunctor
                        DeriveTraversable
                        LambdaCase
+                       MonadComprehensions
                        MultiWayIf
                        NumDecimals
                        RecordWildCards
