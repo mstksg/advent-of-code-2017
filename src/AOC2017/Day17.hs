@@ -1,5 +1,4 @@
--- module AOC2017.Day17 (day17a, day17b) where
-module AOC2017.Day17  where
+module AOC2017.Day17 (day17a, day17b) where
 
 import           AOC2017.Types      (Challenge)
 import           Data.List.NonEmpty (NonEmpty(..))
@@ -34,7 +33,9 @@ run n = go 1 (Tape [] 0 [])
         t1 = unshift x $ iterate move t0 !!! n
 
 day17a :: Challenge
-day17a (read->n) = show . head . _tRights $ run n !!! 2017
+day17a (read->n) = show r
+  where
+    Tape _ _ (r:_) = run n !!! 2017
 
 day17b :: Challenge
 day17b (read->n) = show . last
