@@ -33,10 +33,10 @@ runDance d = lookupPerm (_dName d)
 
 parseMove :: String -> Dance
 parseMove = \case
-    's':(read->n)            -> DP (rotator n)                 M.empty
-    'x':(splitOn "/"->n:m:_) -> DP (swapper (read n) (read m)) M.empty
-    'p':n:_:m:_              -> DP M.empty                     (swapper n m)
-    _                        -> error "No parse"
+    's':(read->n)                     -> DP (rotator n)   M.empty
+    'x':(map read.splitOn "/"->n:m:_) -> DP (swapper n m) M.empty
+    'p':n:_:m:_                       -> DP M.empty       (swapper n m)
+    _                                 -> error "No parse"
   where
     rotator :: Int -> M.Map Int Int
     rotator n = M.fromList [ (i, (i - n) `mod` 16) | i <- [0..15] ]
