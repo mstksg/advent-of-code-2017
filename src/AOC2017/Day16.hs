@@ -1,14 +1,10 @@
-module AOC2017.Day16 where
--- module AOC2017.Day16 (day16a, day16b) where
+module AOC2017.Day16 (day16a, day16b) where
 
 import           AOC2017.Types   (Challenge)
-import           Data.Char
-import           Data.List
-import           Data.List.Split
-import           Data.Semigroup
-import           Data.Tuple
+import           Data.Char       (chr, ord)
+import           Data.List.Split (splitOn)
+import           Data.Semigroup  (Semigroup(..), stimes)
 import qualified Data.Map        as M
-import qualified Data.Vector     as V
 
 data Dance = DP { _dPos  :: !(M.Map Int Int)
                 , _dName :: !(M.Map Char Char)
@@ -52,4 +48,6 @@ parse = foldMap parseMove . splitOn ","
 
 day16a :: Challenge
 day16a = runDance . parse
-day16b = runDance . stimes 1e9 . parse
+
+day16b :: Challenge
+day16b = runDance . stimes (1e9 :: Int) . parse
