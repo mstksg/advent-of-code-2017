@@ -1,44 +1,35 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs            #-}
-{-# LANGUAGE TemplateHaskell  #-}
-{-# LANGUAGE TypeInType       #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeInType             #-}
 
 module AOC2017.Day18 (day18a, day18b) where
 
--- import           Control.Monad.Trans.Control
--- import           Text.Read
-import           AOC2017.Types                  (Challenge)
-import           Control.Applicative
-import           Control.Lens
-import           Control.Monad
-import           Control.Monad.Except
-import           Control.Monad.Morph
-import           Control.Monad.Prompt
-import           Control.Monad.RWS
-import           Control.Monad.Reader
-import           Control.Monad.State
-import           Control.Monad.Trans.Maybe
-import           Control.Monad.Writer
-import           Data.Bifunctor
-import           Data.Char
-import           Data.Finite
-import           Data.Foldable
-import           Data.Kind
-import           Data.List
-import           Data.Maybe
-import           Data.Monoid
-import           Debug.Trace
-import qualified Data.IntMap                    as IM
-import qualified Data.List.NonEmpty             as NE
-import qualified Data.Map                       as M
-import qualified Data.Vector.Sized              as V
+import           AOC2017.Types             (Challenge)
+import           Control.Applicative       (many, empty)
+import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
+import           Control.Monad             (join, guard, when)
+import           Control.Monad.Morph       (hoist, lift)
+import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
+import           Control.Monad.State       (StateT(..), State, execStateT, evalState, get, put)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Control.Monad.Writer      (Writer, runWriter, tell)
+import           Data.Char                 (isAlpha)
+import           Data.Kind                 (Type)
+import           Data.Maybe                (fromJust)
+import           Data.Monoid               (First(..))
+import qualified Data.Map                  as M
+import qualified Data.Vector.Sized         as V
 
 data Tape a = Tape { _tLefts  :: [a]
                    , _tFocus  :: a
                    , _tRights :: [a]
                    }
   deriving Show
-makeLenses ''Tape
+makeClassy ''Tape
 
 -- | Shifts the Tape to the left or right by a given amount
 move :: Int -> Tape a -> Maybe (Tape a)
@@ -74,12 +65,13 @@ parseOp inp = case words inp of
     "mod":(x:_):(addr->y):_     -> OBin mod x y
     "rcv":(x:_):_               -> ORcv x
     "jgz":(addr->x):(addr->y):_ -> OJgz x y
+    _                           -> error "Bad parse"
 
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
 
-makeLenses ''ProgState
+makeClassy ''ProgState
 
 data Command :: Type -> Type where
     CRcv :: Int -> Command Int
@@ -156,13 +148,13 @@ interpretB
 interpretB = \case
     CSnd x -> tell [x]
     CRcv _ -> get >>= \case
-      []   -> mzero
+      []   -> empty
       x:xs -> put xs >> return x
 
 data Thread = T { _tState   :: ProgState
                 , _tBuffer  :: [Int]
                 }
-makeLenses ''Thread
+makeClassy ''Thread
 
 type MultiState = V.Vector 2 Thread
 
@@ -175,14 +167,14 @@ stepThread (T st buf) = (out, T st'' buf') <$ guard (not stopped)
                        . flip runStateT st
                        $ stepTape
     (stopped, st'') = case join st' of
-      Nothing        -> (True , st  )
-      Just (_, st'') -> (False, st'')
+      Nothing         -> (True , st   )
+      Just (_, newSt) -> (False, newSt)
 
 
 runB :: State MultiState [Int]
 runB = do
     outA <- zoom (V.ix 0)
-          . hoist (return . fromJust)
+          . hoist (return . fromJust)     -- 'many' always succeeds
           $ many (StateT stepThread)
     outB <- zoom (V.ix 1)
           . hoist (return . fromJust)
