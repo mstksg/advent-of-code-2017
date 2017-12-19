@@ -12,9 +12,9 @@ import           AOC2017.Types             (Challenge)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
 import           Control.Monad             (join, guard, when)
-import           Control.Monad.Morph       (hoist, lift)
 import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
-import           Control.Monad.State       (StateT(..), State, execStateT, evalState, get, put)
+import           Control.Monad.State       (StateT(..), execStateT, evalStateT, get, put)
+import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer      (Writer, runWriter, tell)
 import           Data.Char                 (isAlpha)
@@ -171,24 +171,21 @@ stepThread (T st buf) = (out, T st'' buf') <$ guard (not stopped)
       Just (_, newSt) -> (False, newSt)
 
 
-runB :: State MultiState [Int]
+runB :: StateT MultiState Maybe [Int]
 runB = do
     outA <- zoom (V.ix 0)
-          . hoist (return . fromJust)     -- 'many' always succeeds
           $ many (StateT stepThread)
     outB <- zoom (V.ix 1)
-          . hoist (return . fromJust)
           $ many (StateT stepThread)
-    if null outA && null outB
-      then return []
-      else do
-        V.ix 0 . tBuffer <>= concat outB
-        V.ix 1 . tBuffer <>= concat outA
-        (concat outB ++) <$> runB
-
+    V.ix 0 . tBuffer <>= concat outB
+    V.ix 1 . tBuffer <>= concat outA
+    guard . not $ null outA && null outB
+    return $ concat outB
 
 day18b :: Challenge
-day18b (parse->t) = show . length $ evalState runB ms
+day18b (parse->t) = show . length . concat
+                  . fromJust
+                  $ evalStateT (many runB) ms
   where
     Just ms = V.fromList [ T (PS t (M.singleton 'p' 0)) []
                          , T (PS t (M.singleton 'p' 1)) []
