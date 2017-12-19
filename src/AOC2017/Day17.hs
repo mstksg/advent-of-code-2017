@@ -1,9 +1,8 @@
 module AOC2017.Day17 (day17a, day17b) where
 
 import           AOC2017.Types      (Challenge)
-import           Data.List
+import           Data.List          (elemIndices)
 import           Data.List.NonEmpty (NonEmpty(..))
-import           Data.Maybe         (mapMaybe)
 import qualified Data.List.NonEmpty as NE
 
 (!!!) :: [a] -> Int -> a
@@ -40,7 +39,7 @@ day17a (read->n) = show r
 
 day17b :: Challenge
 day17b (read->n) = show . last
-                 . elemIndices 1
+                 . elemIndices @Int 1
                  $ scanl jump 0 [1 .. 5e7]
   where
     jump i x = ((i + n) `mod` x) + 1
