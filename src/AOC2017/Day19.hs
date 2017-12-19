@@ -12,9 +12,10 @@ import qualified Linear                    as L
 type Grid  = V.Vector (V.Vector Char)
 type Point = L.V2 Int
 
-follow :: Grid -> StateT (L.V2 Point) [] Char
+follow :: Grid -> StateT (Point, Point) [] Char
 follow g = do
-    L.V2 x0 x1 <- get
+    -- (last position, current position)
+    (x0, x1) <- get
     x2 <- lift $ case gridAt x1 of
         ' ' -> []
         '+' -> (+ x1) <$> [ L.V2 0    1
@@ -23,10 +24,11 @@ follow g = do
                           , L.V2 (-1) 0
                           ]
         _   -> [ x1 + (x1 - x0) ]
-    guard $ x2 /= x0 && inBounds x2
     let nextChar = gridAt x2
-    guard $ (nextChar `elem` "|-+") || isAlpha nextChar
-    put (L.V2 x1 x2)
+    guard $ x2 /= x0
+    guard $ inBounds x2
+    guard $ nextChar `elem` "|-+" || isAlpha nextChar
+    put (x1, x2)
     return nextChar
   where
     gridAt   (L.V2 x y) = g V.! y V.! x
@@ -36,7 +38,7 @@ follow g = do
 day19 :: Grid -> String
 day19 g = ('|':) . head . flip evalStateT p0 . many . follow $ g
   where
-    p0 = L.V2 (L.V2 x0 (-1)) (L.V2 x0 0)
+    p0 = (L.V2 x0 (-1), L.V2 x0 0)
     Just x0 = V.elemIndex '|' (g V.! 0)
 
 day19a :: Challenge
