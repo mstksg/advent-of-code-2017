@@ -140,14 +140,14 @@ challengeData sess d p = do
       return r
     parseTests :: [String] -> [(String, Maybe String)]
     parseTests xs = case break (">>> " `isPrefixOf`) xs of
-      (strip.unlines->inp,[])
-        | null inp  -> []
-        | otherwise -> [(inp, Nothing)]
-      (strip.unlines->inp,(strip.drop 4->ans):rest)
-        | null inp  -> parseTests rest
+      (inp,[])
+        | null (strip (unlines inp))  -> []
+        | otherwise -> [(unlines inp, Nothing)]
+      (inp,(strip.drop 4->ans):rest)
+        | null (strip (unlines inp))  -> parseTests rest
         | otherwise ->
             let ans' = ans <$ guard (not (null ans))
-            in  (inp, ans') : parseTests rest
+            in  (unlines inp, ans') : parseTests rest
 
 data Config = Cfg { _cfgSession :: Maybe String }
   deriving (Generic)

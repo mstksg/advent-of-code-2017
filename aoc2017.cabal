@@ -52,6 +52,7 @@ library
                      , finite-typelits
                      , grid
                      , lens
+                     , linear
                      , megaparsec
                      , mmorph
                      , monad-control
