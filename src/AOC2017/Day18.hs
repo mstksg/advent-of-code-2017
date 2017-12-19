@@ -51,13 +51,11 @@ move n (Tape ls x rs) = case compare n 0 of
       []    -> Nothing
       r:rs' -> move (n - 1) (Tape (x:ls) r rs')
 
+type Addr = Either Char Int
 
-
-addr :: String -> Either Char Int
+addr :: String -> Addr
 addr [c] | isAlpha c = Left c
 addr str = Right (read str)
-
-type Addr = Either Char Int
 
 data Op = OSnd Addr
         | OBin (Int -> Int -> Int) Char Addr
@@ -69,12 +67,12 @@ instance Show Op where
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
-    "snd":(addr->c):_ -> OSnd c
-    "set":(x:_):(addr->y):_ -> OBin (const id) x y
-    "add":(x:_):(addr->y):_ -> OBin (+) x y
-    "mul":(x:_):(addr->y):_ -> OBin (*) x y
-    "mod":(x:_):(addr->y):_ -> OBin mod x y
-    "rcv":(x:_):_ -> ORcv x
+    "snd":(addr->c):_           -> OSnd c
+    "set":(x:_):(addr->y):_     -> OBin (const id) x y
+    "add":(x:_):(addr->y):_     -> OBin (+) x y
+    "mul":(x:_):(addr->y):_     -> OBin (*) x y
+    "mod":(x:_):(addr->y):_     -> OBin mod x y
+    "rcv":(x:_):_               -> ORcv x
     "jgz":(addr->x):(addr->y):_ -> OJgz x y
 
 data ProgState = PS { _psTape :: Tape Op
@@ -147,36 +145,6 @@ day18a = show
 
 -- Part B
 
-data Thread = T { _tState   :: ProgState
-                , _tBuffer  :: [Int]
-                }
-makeLenses ''Thread
-
-type MultiState = V.Vector 2 Thread
-
-stepThread :: Thread -> (([Int], Bool), Thread)
-stepThread (T st buf) = ((out, stopped), T st'' buf')
-  where
-    ((st', buf'), out) = runPartB buf
-                       . runPromptM interpretB
-                       . runMaybeT
-                       . flip runStateT st
-                       $ stepTape
-    (stopped, st'') = case join st' of
-      Nothing        -> (True , st  )
-      Just (_, st'') -> (False, st'')
-
-runB :: State MultiState [Int]
-runB = do
-    (outA, bA) <- zoom (V.ix 0) $ state stepThread
-    (outB, bB) <- zoom (V.ix 1) $ state stepThread
-    if bA && bB
-      then return outB
-      else do
-        V.ix 0 . tBuffer <>= outB
-        V.ix 1 . tBuffer <>= outA
-        (outB ++) <$> runB
-
 type PartB = MaybeT (StateT [Int] (Writer [Int]))
 
 runPartB :: [Int] -> PartB a -> ((Maybe a, [Int]), [Int])
@@ -190,6 +158,42 @@ interpretB = \case
     CRcv _ -> get >>= \case
       []   -> mzero
       x:xs -> put xs >> return x
+
+data Thread = T { _tState   :: ProgState
+                , _tBuffer  :: [Int]
+                }
+makeLenses ''Thread
+
+type MultiState = V.Vector 2 Thread
+
+stepThread :: Thread -> Maybe ([Int], Thread)
+stepThread (T st buf) = (out, T st'' buf') <$ guard (not stopped)
+  where
+    ((st', buf'), out) = runPartB buf
+                       . runPromptM interpretB
+                       . runMaybeT
+                       . flip runStateT st
+                       $ stepTape
+    (stopped, st'') = case join st' of
+      Nothing        -> (True , st  )
+      Just (_, st'') -> (False, st'')
+
+
+runB :: State MultiState [Int]
+runB = do
+    outA <- zoom (V.ix 0)
+          . hoist (return . fromJust)
+          $ many (StateT stepThread)
+    outB <- zoom (V.ix 1)
+          . hoist (return . fromJust)
+          $ many (StateT stepThread)
+    if null outA && null outB
+      then return []
+      else do
+        V.ix 0 . tBuffer <>= concat outB
+        V.ix 1 . tBuffer <>= concat outA
+        (concat outB ++) <$> runB
+
 
 day18b :: Challenge
 day18b (parse->t) = show . length $ evalState runB ms
