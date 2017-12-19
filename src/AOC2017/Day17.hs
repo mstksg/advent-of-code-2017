@@ -1,6 +1,7 @@
 module AOC2017.Day17 (day17a, day17b) where
 
 import           AOC2017.Types      (Challenge)
+import           Data.List
 import           Data.List.NonEmpty (NonEmpty(..))
 import           Data.Maybe         (mapMaybe)
 import qualified Data.List.NonEmpty as NE
@@ -39,11 +40,7 @@ day17a (read->n) = show r
 
 day17b :: Challenge
 day17b (read->n) = show . last
-                 . mapMaybe (\(x, p) -> [ x | p == 1 ])
-                 . take 5e7
-                 $ zip @Int @Int [0 ..] insertionPoints
+                 . elemIndices 1
+                 $ scanl jump 0 [1 .. 5e7]
   where
-    insertionPoints :: [Int]
-    insertionPoints = scanl go 0 [1..]
-      where
-        go i x = ((i + n) `mod` x) + 1
+    jump i x = ((i + n) `mod` x) + 1

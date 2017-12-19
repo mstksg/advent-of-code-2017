@@ -137,7 +137,6 @@ day18a = show
        . runTape  . (`PS` M.empty)
        . parse
 
-
 -- | Context in which to interpret Command for Part B
 type PartB = MaybeT (StateT [Int] (Writer [Int]))
 runPartB :: [Int] -> PartB a -> ((Maybe a, [Int]), [Int])
