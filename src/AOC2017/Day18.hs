@@ -9,6 +9,7 @@
 module AOC2017.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
+import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
 import           Control.Monad             (join, guard, when)
@@ -23,24 +24,6 @@ import           Data.Maybe                (fromJust)
 import           Data.Monoid               (First(..))
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
-
-data Tape a = Tape { _tLefts  :: [a]
-                   , _tFocus  :: a
-                   , _tRights :: [a]
-                   }
-  deriving Show
-makeClassy ''Tape
-
--- | Shifts the Tape to the left or right by a given amount
-move :: Int -> Tape a -> Maybe (Tape a)
-move n (Tape ls x rs) = case compare n 0 of
-    LT -> case ls of
-      []    -> Nothing
-      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
-    EQ -> Just $ Tape ls x rs
-    GT -> case rs of
-      []    -> Nothing
-      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
 
 type Addr = Either Char Int
 
@@ -83,26 +66,25 @@ data Command :: Type -> Type where
 -- | Single step through program tape.  Nothing = program terminates (by
 -- jumping out of bounds)
 stepTape :: StateT ProgState (MaybeT (Prompt Command)) ()
-stepTape = do
-    use (psTape . tFocus) >>= \case
-      OSnd x -> do
-        lift . lift . prompt . CSnd =<< addrVal x
-        advance 1
-      OBin f x y -> do
-        yVal <- addrVal y
-        psRegs . at x . non 0 %= (`f` yVal)
-        advance 1
-      ORcv x -> do
-        y <- lift . lift . prompt . CRcv
-         =<< use (psRegs . at x . non 0)
-        psRegs . at x .= Just y
-        advance 1
-      OJgz x y -> do
-        xVal <- addrVal x
-        moveAmt <- if xVal > 0
-                     then addrVal y
-                     else return 1
-        advance moveAmt
+stepTape = use (psTape . tFocus) >>= \case
+    OSnd x -> do
+      lift . lift . prompt . CSnd =<< addrVal x
+      advance 1
+    OBin f x y -> do
+      yVal <- addrVal y
+      psRegs . at x . non 0 %= (`f` yVal)
+      advance 1
+    ORcv x -> do
+      y <- lift . lift . prompt . CRcv
+       =<< use (psRegs . at x . non 0)
+      psRegs . at x .= Just y
+      advance 1
+    OJgz x y -> do
+      xVal <- addrVal x
+      moveAmt <- if xVal > 0
+                   then addrVal y
+                   else return 1
+      advance moveAmt
   where
     addrVal (Left r)  = use (psRegs . at r . non 0)
     addrVal (Right x) = return x
@@ -178,12 +160,12 @@ stepThread = StateT go
 -- | Single step through both threads.  Nothing = both threads terminate
 stepThreads :: StateT MultiState Maybe [Int]
 stepThreads = do
-    outA <- zoom (V.ix 0) $ many stepThread
-    outB <- zoom (V.ix 1) $ many stepThread
-    V.ix 0 . tBuffer <>= concat outB
-    V.ix 1 . tBuffer <>= concat outA
+    outA <- zoom (V.ix 0) $ concat <$> many stepThread
+    outB <- zoom (V.ix 1) $ concat <$> many stepThread
+    V.ix 0 . tBuffer <>= outB
+    V.ix 1 . tBuffer <>= outA
     guard . not $ null outA && null outB
-    return $ concat outB
+    return outB
 
 day18b :: Challenge
 day18b (parse->t) = show . length . concat

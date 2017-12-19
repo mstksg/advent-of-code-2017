@@ -1,24 +1,8 @@
 module AOC2017.Day05 (day05a, day05b) where
 
-import           AOC2017.Types (Challenge)
-import           Data.List     (unfoldr)
-
-data Tape a = Tape { _tLefts  :: [a]
-                   , _tFocus  :: a
-                   , _tRights :: [a]
-                   }
-  deriving Show
-
--- | Shifts the Tape to the left or right by a given amount
-move :: Int -> Tape Int -> Maybe (Tape Int)
-move n (Tape ls x rs) = case compare n 0 of
-    LT -> case ls of
-      []    -> Nothing
-      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
-    EQ -> Just (Tape ls x rs)
-    GT -> case rs of
-      []    -> Nothing
-      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
+import           AOC2017.Types     (Challenge)
+import           AOC2017.Util      (iterateMaybe)
+import           AOC2017.Util.Tape (Tape(..), move)
 
 -- | Update the focused cell and follow the requested jump, if possible
 step
@@ -40,9 +24,4 @@ day05b = show . length . iterateMaybe (step update) . parse
     update x
       | x >= 3    = x - 1
       | otherwise = x + 1
-
-iterateMaybe :: (a -> Maybe a) -> a -> [a]
-iterateMaybe f x0 = x0 : unfoldr (fmap dup . f) x0
-  where
-    dup x = (x,x)
 

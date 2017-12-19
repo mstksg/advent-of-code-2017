@@ -22,6 +22,7 @@ library
   exposed-modules:     AOC2017
                        AOC2017.Types
                        AOC2017.Util
+                       AOC2017.Util.Tape
   other-modules:       AOC2017.Day01
                        AOC2017.Day02
                        AOC2017.Day03
@@ -45,6 +46,7 @@ library
                      , MonadPrompt
                      , aeson
                      , bytestring
+                     , comonad
                      , containers >= 0.5.10.2
                      , curl
                      , deepseq
