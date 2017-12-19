@@ -28,6 +28,7 @@ import           AOC2017.Day14 as AOC
 import           AOC2017.Day15 as AOC
 import           AOC2017.Day16 as AOC
 import           AOC2017.Day17 as AOC
+import           AOC2017.Day18 as AOC
 
 import           AOC2017.Types              as AOC
 import           AOC2017.Util               as AOC
@@ -73,6 +74,7 @@ challenges = [ ( 1, (day01a, day01b))
              , (15, (day15a, day15b))
              , (16, (day16a, day16b))
              , (17, (day17a, day17b))
+             , (18, (day18a, day18b))
              ]
 
 data ChallengePaths = CP { _cpDataUrl :: !FilePath

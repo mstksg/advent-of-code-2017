@@ -39,7 +39,9 @@ library
                        AOC2017.Day15
                        AOC2017.Day16
                        AOC2017.Day17
+                       AOC2017.Day18
   build-depends:       base >= 4.7 && < 5
+                     , MonadPrompt
                      , aeson
                      , bytestring
                      , containers >= 0.5.10.2
@@ -50,6 +52,8 @@ library
                      , grid
                      , lens
                      , megaparsec
+                     , mmorph
+                     , monad-control
                      , mtl
                      , split
                      , text
