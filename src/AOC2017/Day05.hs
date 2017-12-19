@@ -2,7 +2,7 @@ module AOC2017.Day05 (day05a, day05b) where
 
 import           AOC2017.Types     (Challenge)
 import           AOC2017.Util      (iterateMaybe)
-import           AOC2017.Util.Tape (Tape(..), move)
+import           AOC2017.Util.Tape (Tape(..), move, unsafeTape)
 
 -- | Update the focused cell and follow the requested jump, if possible
 step
@@ -12,8 +12,7 @@ step
 step f (Tape ls x rs) = move x (Tape ls (f x) rs)
 
 parse :: String -> Tape Int
-parse (map read.lines->x:xs) = Tape [] x xs
-parse _                      = error "Expected at least one line"
+parse = unsafeTape . map read . lines
 
 day05a :: Challenge
 day05a = show . length . iterateMaybe (step succ  ) . parse

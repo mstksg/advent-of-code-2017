@@ -9,7 +9,7 @@
 module AOC2017.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
-import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move)
+import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move, unsafeTape)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
 import           Control.Monad             (join, guard, when)
@@ -51,7 +51,7 @@ parseOp inp = case words inp of
     _                           -> error "Bad parse"
 
 parse :: String -> Tape Op
-parse = (\(x:xs) -> Tape [] x xs) . map parseOp . lines
+parse = unsafeTape . map parseOp . lines
 
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int

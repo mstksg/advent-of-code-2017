@@ -7,7 +7,7 @@
 module AOC2017.Util.Tape (
     Tape(..)
   , HasTape(..)
-  , toTape
+  , toTape, listToTape, unsafeTape
   , moveLeft, moveRight
   , move
   , moveLeftC, moveRightC
@@ -17,6 +17,7 @@ import           AOC2017.Util
 import           Control.Comonad
 import           Control.Lens
 import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.Maybe
 import           Data.Monoid
 import qualified Data.List.NonEmpty as NE
 
@@ -43,6 +44,13 @@ instance Comonad Tape where
 
 toTape :: NonEmpty a -> Tape a
 toTape (x :| xs) = Tape [] x xs
+
+listToTape :: [a] -> Maybe (Tape a)
+listToTape []     = Nothing
+listToTape (x:xs) = Just (Tape [] x xs)
+
+unsafeTape :: [a] -> Tape a
+unsafeTape = fromMaybe (error "unsafeTape: Empty list") . listToTape
 
 moveLeft :: Tape a -> Maybe (Tape a)
 moveLeft (Tape ls x rs) = case ls of
