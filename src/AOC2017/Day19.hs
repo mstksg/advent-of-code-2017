@@ -12,6 +12,7 @@ import qualified Linear                    as L
 type Grid  = V.Vector (V.Vector Char)
 type Point = L.V2 Int
 
+-- | Expand search by one step
 follow :: Grid -> StateT (Point, Point) [] Char
 follow g = do
     -- (last position, current position)
@@ -35,8 +36,9 @@ follow g = do
     inBounds (L.V2 x y) = all ($ x) [(>= 0), (< V.length (g V.! 0))]
                        && all ($ y) [(>= 0), (< V.length g        )]
 
+-- head is safe because 'many' always succeeds
 day19 :: Grid -> String
-day19 g = ('|':) . head . flip evalStateT p0 . many . follow $ g
+day19 g = head . flip evalStateT p0 $ ('|':) <$> many (follow g)
   where
     p0 = (L.V2 x0 (-1), L.V2 x0 0)
     Just x0 = V.elemIndex '|' (g V.! 0)
