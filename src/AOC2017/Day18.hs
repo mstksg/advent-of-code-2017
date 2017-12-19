@@ -21,6 +21,7 @@ import           Control.Monad.Trans.Maybe
 import           Control.Monad.Writer
 import           Data.Bifunctor
 import           Data.Char
+import           Data.Finite
 import           Data.Foldable
 import           Data.Kind
 import           Data.List
@@ -30,6 +31,7 @@ import           Debug.Trace
 import qualified Data.IntMap                    as IM
 import qualified Data.List.NonEmpty             as NE
 import qualified Data.Map                       as M
+import qualified Data.Vector.Sized              as V
 
 data Tape a = Tape { _tLefts  :: [a]
                    , _tFocus  :: a
@@ -37,6 +39,19 @@ data Tape a = Tape { _tLefts  :: [a]
                    }
   deriving Show
 makeLenses ''Tape
+
+-- | Shifts the Tape to the left or right by a given amount
+move :: Int -> Tape a -> Maybe (Tape a)
+move n (Tape ls x rs) = case compare n 0 of
+    LT -> case ls of
+      []    -> Nothing
+      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
+    EQ -> Just $ Tape ls x rs
+    GT -> case rs of
+      []    -> Nothing
+      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
+
+
 
 addr :: String -> Either Char Int
 addr [c] | isAlpha c = Left c
@@ -72,6 +87,7 @@ data Command :: Type -> Type where
     CRcv :: Int -> Command Int
     CSnd :: Int -> Command ()
 
+-- Maybe: Move out of bounds
 stepTape :: StateT ProgState (MaybeT (Prompt Command)) ()
 stepTape = do
     use (psTape . tFocus) >>= \case
@@ -101,7 +117,7 @@ stepTape = do
       psTape .= t'
 
 runTape :: ProgState -> Prompt Command ProgState
-runTape ps = fmap fromJust      -- 'many' always succeeds
+runTape ps = fmap fromJust
            . runMaybeT
            . flip execStateT ps
            $ many stepTape
@@ -128,29 +144,43 @@ day18a = show
        . runTape  . (`PS` M.empty)
        . parse
 
--- data Thread = T { _tState   :: ProgState
---                 , _tBuffer  :: [Int]
---                 }
 
--- data Resume = RTerminated
---             | RContinue (Int -> Resume)
+-- Part B
 
--- data Block = BlockWait
---            | BlockTerminated
+data Thread = T { _tState   :: ProgState
+                , _tBuffer  :: [Int]
+                }
+makeLenses ''Thread
 
--- type PartA = StateT (Maybe Int) (Writer (First Int))
+type MultiState = V.Vector 2 Thread
 
--- runPartA :: PartA a -> Int
--- runPartA = fromJust . getFirst . snd . runWriter . flip execStateT Nothing
+stepThread :: Thread -> (([Int], Bool), Thread)
+stepThread (T st buf) = ((out, stopped), T st'' buf')
+  where
+    ((st', buf'), out) = runPartB buf
+                       . runPromptM interpretB
+                       . runMaybeT
+                       . flip runStateT st
+                       $ stepTape
+    (stopped, st'') = case join st' of
+      Nothing        -> (True , st  )
+      Just (_, st'') -> (False, st'')
 
--- interpretA :: Command a -> PartA a
+runB :: State MultiState [Int]
+runB = do
+    (outA, bA) <- zoom (V.ix 0) $ state stepThread
+    (outB, bB) <- zoom (V.ix 1) $ state stepThread
+    if bA && bB
+      then return outB
+      else do
+        V.ix 0 . tBuffer <>= outB
+        V.ix 1 . tBuffer <>= outA
+        (outB ++) <$> runB
 
--- | MaybeT: Out of input
 type PartB = MaybeT (StateT [Int] (Writer [Int]))
 
--- | Nothing: Block
-runPartB :: [Int] -> PartB a -> (([a], [Int]), [Int])
-runPartB buf = (first . first) fold . runWriter . flip runStateT buf . runMaybeT . some
+runPartB :: [Int] -> PartB a -> ((Maybe a, [Int]), [Int])
+runPartB buf = runWriter . flip runStateT buf . runMaybeT
 
 interpretB
     :: Command a
@@ -161,165 +191,9 @@ interpretB = \case
       []   -> mzero
       x:xs -> put xs >> return x
 
-runB :: ProgState -> ProgState -> ([Int], [Int])
-runB = go [] []
-  where
-    go :: [Int] -> [Int] -> ProgState -> ProgState -> ([Int], [Int])
-    go bufa0 bufb0 pa0 pb0 = undefined
-    -- go bufa0 bufb0 pa0 pb0 = case (,) <$> pa1 <*> pb1 of
-    --     Nothing           -> (outa, outb)
-    --     Just (pa1', pb1') -> go (bufa1 ++ outa) (bufb1 ++ outb) pa1' pb1'
-      where
-        ((pa1,bufa1),outa) = runPartB bufa0 . runPromptM interpretB $ runTape pa0
-        ((pb1,bufb1),outb) = runPartB bufb0 . runPromptM interpretB $ runTape pb0
-
 day18b :: Challenge
-day18b (parse->t0) = show $ runB pa pb
+day18b (parse->t) = show . length $ evalState runB ms
   where
-    pa = PS t0 (M.singleton 'p' 0)
-    pb = PS t0 (M.singleton 'p' 1)
-
--- day18a :: Challenge
--- day18a = show
---        . runPartA . runPromptM interpretA
---        . runTape  . (`PS` M.empty)
---        . parse
-
-
--- type Reg = (Tape Op, M.Map String Int, Maybe Int, [Int])
-
--- run :: Reg -> Reg
--- run (t@(Tape _ o _),m0,lst,rcv) = case o of
---     OSnd x   -> (move 1 t, m0, Just (lookup x), rcv)
---     -- OSet x y -> (move 1 t, M.insert x (lookup y) m0, lst, rcv)
---     OBin f x y -> (move 1 t, M.insert x (f (M.findWithDefault 0 x m0) (lookup y)) m0, lst, rcv)
---     ORcv c     -> let cVal = M.findWithDefault 0 c m0
---                       rcv' | cVal == 0 = rcv
---                            | otherwise = case lst of
---                                            Nothing -> rcv
---                                            Just s  -> s : rcv
---                   in  (move 1 t, m0, lst, rcv')
---     OJgz x y -> let xVal = lookup x
---                     moveAmt | xVal > 0  = lookup y
---                             | otherwise = 1
---                 in  (move moveAmt t, m0, lst, rcv)
---   where
---     lookup :: Either String Int -> Int
---     lookup (Left r) = M.findWithDefault 0 r m0
---     lookup (Right x) = x
-
--- day18a = show . head . mapMaybe go . iterate run . (\(x:xs) -> (Tape [] x xs, M.empty, Nothing, [])) . map parseOp . lines
---   where
---     go (_,_,_,rs) = listToMaybe rs
-
--- data RegB = RegB { _rbTape   :: Tape Op
---                  , _rbRegs   :: M.Map String Int
---                  }
-
---   deriving Show
-
--- makeLenses ''RegB
-
--- -- | Shifts the Tape to the left or right by a given amount
--- move' :: Int -> Tape a -> Maybe (Tape a)
--- move' n (Tape ls x rs) = case compare n 0 of
---     LT -> case ls of
---       []    -> Nothing
---       l:ls' -> move' (n + 1) (Tape ls' l (x:rs))
---     EQ -> Just $ Tape ls x rs
---     GT -> case rs of
---       []    -> Nothing
---       r:rs' -> move' (n - 1) (Tape (x:ls) r rs')
-
--- runBs :: RegB -> [Int] -> (Maybe RegB, [Int])
--- runBs rb0@(RegB t m0) = case _tFocus t of
---     OSnd x   -> \inp -> maybe noMore (`runBs` inp) (rb0 & rbTape %%~ move' 1)
---     OBin f x y -> \inp -> maybe noMore (`runBs` inp) $
---           rb0 & rbRegs . at x .~ Just (f (M.findWithDefault 0 x m0) (lookup y))
---               & rbTape %%~ move' 1
---     ORcv v -> \case
---         []   -> (Just rb0, [])
---         x:xs -> maybe noMore (`runBs` xs) $ rb0 & rbRegs . at v .~ Just x
---                                                 & rbTape %%~ move' 1
---     OJgz x y -> \inp ->
---       let xVal = lookup x
---           moveAmt | xVal > 0  = lookup y
---                   | otherwise = 1
---       in  maybe noMore (`runBs` inp) $ rb0 & rbTape %%~ move' moveAmt
---   where
---     noMore = (Nothing, [])
---     lookup (Left r) = M.findWithDefault 0 r m0
---     lookup (Right x) = x
-
--- -- runTwo :: ([Int], [Int]) -> (Maybe RegB, Maybe RegB) -> Maybe (Maybe RegB, Maybe RegB)
--- -- runTwo (b1, b2) = \case
--- --     (Nothing, Nothing ) -> Nothing
--- --     (Just rb1, Nothing) ->
-
--- -- runBs rb@(RegB t m0) = case _tFocus t of
--- --     OSnd x   -> \inp -> lookup x : maybe [] (`runBs` inp) (rb & rbTape %%~ move' 1)
--- --     OSet x y -> \inp -> maybe [] (`runBs` inp) $ rb & rbRegs . at x .~ Just (lookup y)
--- --                                                     & rbTape %%~ move' 1
--- --     OBin f x y -> \inp -> maybe [] (`runBs` inp) $
--- --         rb & rbRegs . at x .~ Just (f (M.findWithDefault 0 x m0) (lookup y))
--- --            & rbTape %%~ move' 1
--- --     ORcv v -> \case
--- --         []   -> []
--- --         x:xs -> maybe [] (`runBs` xs) $ rb & rbRegs . at v .~ Just x
--- --                                            & rbTape %%~ move' 1
--- --     OJgz x y -> \inp ->
--- --       let xVal = lookup x
--- --           moveAmt | xVal > 0  = lookup y
--- --                   | otherwise = 1
--- --       in  maybe [] (`runBs` inp) $ rb & rbTape %%~ move' moveAmt
--- --   where
--- --     lookup (Left r) = M.findWithDefault 0 r m0
--- --     lookup (Right x) = x
-
--- -- runBs :: RegB -> [Int] -> [Int]
--- -- runBs rb@(RegB t m0) = case _tFocus t of
--- --     OSnd x   -> \inp -> lookup x : maybe [] (`runBs` inp) (rb & rbTape %%~ move' 1)
--- --     OSet x y -> \inp -> maybe [] (`runBs` inp) $ rb & rbRegs . at x .~ Just (lookup y)
--- --                                                     & rbTape %%~ move' 1
--- --     OBin f x y -> \inp -> maybe [] (`runBs` inp) $
--- --         rb & rbRegs . at x .~ Just (f (M.findWithDefault 0 x m0) (lookup y))
--- --            & rbTape %%~ move' 1
--- --     ORcv v -> \case
--- --         []   -> []
--- --         x:xs -> maybe [] (`runBs` xs) $ rb & rbRegs . at v .~ Just x
--- --                                            & rbTape %%~ move' 1
--- --     OJgz x y -> \inp ->
--- --       let xVal = lookup x
--- --           moveAmt | xVal > 0  = lookup y
--- --                   | otherwise = 1
--- --       in  maybe [] (`runBs` inp) $ rb & rbTape %%~ move' moveAmt
--- --   where
--- --     lookup (Left r) = M.findWithDefault 0 r m0
--- --     lookup (Right x) = x
-
--- -- runTwoMany :: Tape Op -> [Int]
--- -- runTwoMany t0 = let out1 = runBs rb1 out2
--- --                     out2 = runBs rb2 out1
--- --                 in  out1
--- --   where
--- --     rb1 = RegB t0 (M.singleton "p" 0)
--- --     rb2 = RegB t0 (M.singleton "p" 1)
--- --     -- out1 = runBs rb1 out2
--- --     -- out2 = runBs rb2 out1
-
--- day18b :: Challenge
--- -- day18b = show . take 3 . runTwoMany . parse
--- day18b = undefined
-
--- | Shifts the Tape to the left or right by a given amount
-move :: Int -> Tape a -> Maybe (Tape a)
-move n (Tape ls x rs) = case compare n 0 of
-    LT -> case ls of
-      []    -> Nothing
-      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
-    EQ -> Just $ Tape ls x rs
-    GT -> case rs of
-      []    -> Nothing
-      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
-
-
+    Just ms = V.fromList [ T (PS t (M.singleton 'p' 0)) []
+                         , T (PS t (M.singleton 'p' 1)) []
+                         ]
