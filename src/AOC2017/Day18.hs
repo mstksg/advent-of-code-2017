@@ -67,6 +67,9 @@ parseOp inp = case words inp of
     "jgz":(addr->x):(addr->y):_ -> OJgz x y
     _                           -> error "Bad parse"
 
+parse :: String -> Tape Op
+parse = (\(x:xs) -> Tape [] x xs) . map parseOp . lines
+
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
@@ -77,7 +80,8 @@ data Command :: Type -> Type where
     CRcv :: Int -> Command Int
     CSnd :: Int -> Command ()
 
--- Maybe: Move out of bounds
+-- | Single step through program tape.  Nothing = program terminates (by
+-- jumping out of bounds)
 stepTape :: StateT ProgState (MaybeT (Prompt Command)) ()
 stepTape = do
     use (psTape . tFocus) >>= \case
@@ -106,20 +110,19 @@ stepTape = do
       Just t' <- move n <$> use psTape
       psTape .= t'
 
+-- | Repeatedly run the tape until it goes out of bounds
 runTape :: ProgState -> Prompt Command ProgState
 runTape ps = fmap fromJust
            . runMaybeT
            . flip execStateT ps
            $ many stepTape
 
-parse :: String -> Tape Op
-parse = (\(x:xs) -> Tape [] x xs) . map parseOp . lines
-
+-- | Context in which to interpret Command for Part A
 type PartA = StateT (Maybe Int) (Writer (First Int))
-
 runPartA :: PartA a -> Int
 runPartA = fromJust . getFirst . snd . runWriter . flip execStateT Nothing
 
+-- | Interpet Command for Part A
 interpretA :: Command a -> PartA a
 interpretA = \case
     CRcv x -> do
@@ -135,13 +138,12 @@ day18a = show
        . parse
 
 
--- Part B
-
+-- | Context in which to interpret Command for Part B
 type PartB = MaybeT (StateT [Int] (Writer [Int]))
-
 runPartB :: [Int] -> PartB a -> ((Maybe a, [Int]), [Int])
 runPartB buf = runWriter . flip runStateT buf . runMaybeT
 
+-- | Interpet Command for Part B
 interpretB
     :: Command a
     -> PartB a
@@ -158,25 +160,27 @@ makeClassy ''Thread
 
 type MultiState = V.Vector 2 Thread
 
-stepThread :: Thread -> Maybe ([Int], Thread)
-stepThread (T st buf) = (out, T st'' buf') <$ guard (not stopped)
+-- | Single step through a thread.  Nothing = either the thread terminates,
+-- or requires extra input.
+stepThread :: StateT Thread Maybe [Int]
+stepThread = StateT go
   where
-    ((st', buf'), out) = runPartB buf
-                       . runPromptM interpretB
-                       . runMaybeT
-                       . flip runStateT st
-                       $ stepTape
-    (stopped, st'') = case join st' of
-      Nothing         -> (True , st   )
-      Just (_, newSt) -> (False, newSt)
+    go (T st buf) = (out, T st'' buf') <$ guard (not stopped)
+      where
+        ((st', buf'), out) = runPartB buf
+                           . runPromptM interpretB
+                           . runMaybeT
+                           . flip runStateT st
+                           $ stepTape
+        (stopped, st'') = case join st' of
+          Nothing         -> (True , st   )
+          Just (_, newSt) -> (False, newSt)
 
-
-runB :: StateT MultiState Maybe [Int]
-runB = do
-    outA <- zoom (V.ix 0)
-          $ many (StateT stepThread)
-    outB <- zoom (V.ix 1)
-          $ many (StateT stepThread)
+-- | Single step through both threads.  Nothing = both threads terminate
+stepThreads :: StateT MultiState Maybe [Int]
+stepThreads = do
+    outA <- zoom (V.ix 0) $ many stepThread
+    outB <- zoom (V.ix 1) $ many stepThread
     V.ix 0 . tBuffer <>= concat outB
     V.ix 1 . tBuffer <>= concat outA
     guard . not $ null outA && null outB
@@ -185,7 +189,7 @@ runB = do
 day18b :: Challenge
 day18b (parse->t) = show . length . concat
                   . fromJust
-                  $ evalStateT (many runB) ms
+                  $ evalStateT (many stepThreads) ms
   where
     Just ms = V.fromList [ T (PS t (M.singleton 'p' 0)) []
                          , T (PS t (M.singleton 'p' 1)) []
