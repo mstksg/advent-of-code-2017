@@ -11,11 +11,14 @@ import           AOC2017.Types                  (Challenge)
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Except
 import           Control.Monad.Morph
 import           Control.Monad.Prompt
+import           Control.Monad.RWS
+import           Control.Monad.Reader
+import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
-import           Control.Monad.Trans.State
-import           Control.Monad.Trans.Writer
+import           Control.Monad.Writer
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Foldable
@@ -24,7 +27,16 @@ import           Data.List
 import           Data.Maybe
 import           Data.Monoid
 import           Debug.Trace
+import qualified Data.IntMap                    as IM
+import qualified Data.List.NonEmpty             as NE
 import qualified Data.Map                       as M
+
+data Tape a = Tape { _tLefts  :: [a]
+                   , _tFocus  :: a
+                   , _tRights :: [a]
+                   }
+  deriving Show
+makeLenses ''Tape
 
 addr :: String -> Either Char Int
 addr [c] | isAlpha c = Left c
@@ -50,27 +62,10 @@ parseOp inp = case words inp of
     "rcv":(x:_):_ -> ORcv x
     "jgz":(addr->x):(addr->y):_ -> OJgz x y
 
-data Tape a = Tape { _tLefts  :: [a]
-                   , _tFocus  :: a
-                   , _tRights :: [a]
-                   }
-  deriving Show
-makeLenses ''Tape
-
--- | Shifts the Tape to the left or right by a given amount
-move :: Int -> Tape a -> Maybe (Tape a)
-move n (Tape ls x rs) = case compare n 0 of
-    LT -> case ls of
-      []    -> Nothing
-      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
-    EQ -> Just $ Tape ls x rs
-    GT -> case rs of
-      []    -> Nothing
-      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
-
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
+
 makeLenses ''ProgState
 
 data Command :: Type -> Type where
@@ -88,7 +83,8 @@ stepTape = do
         psRegs . at x . non 0 %= (`f` yVal)
         advance 1
       ORcv x -> do
-        y <- lift . lift . prompt . CRcv =<< use (psRegs . at x . non 0)
+        y <- lift . lift . prompt . CRcv
+         =<< use (psRegs . at x . non 0)
         psRegs . at x .= Just y
         advance 1
       OJgz x y -> do
@@ -103,6 +99,12 @@ stepTape = do
     advance n = do
       Just t' <- move n <$> use psTape
       psTape .= t'
+
+runTape :: ProgState -> Prompt Command ProgState
+runTape ps = fmap fromJust      -- 'many' always succeeds
+           . runMaybeT
+           . flip execStateT ps
+           $ many stepTape
 
 parse :: String -> Tape Op
 parse = (\(x:xs) -> Tape [] x xs) . map parseOp . lines
@@ -121,19 +123,68 @@ interpretA = \case
     CSnd x -> put (Just x)
 
 day18a :: Challenge
-day18a (parse->t) = show
-                  . runPartA  . runPromptM interpretA
-                  . runMaybeT . flip execStateT (PS t M.empty)
-                  $ many stepTape
+day18a = show
+       . runPartA . runPromptM interpretA
+       . runTape  . (`PS` M.empty)
+       . parse
 
-data MultiState = MS { _msProg1   :: ProgState
-                     , _msProg2   :: ProgState
-                     , _msBuffer1 :: [Int]
-                     , _msBuffer2 :: [Int]
-                     }
+-- data Thread = T { _tState   :: ProgState
+--                 , _tBuffer  :: [Int]
+--                 }
+
+-- data Resume = RTerminated
+--             | RContinue (Int -> Resume)
+
+-- data Block = BlockWait
+--            | BlockTerminated
+
+-- type PartA = StateT (Maybe Int) (Writer (First Int))
+
+-- runPartA :: PartA a -> Int
+-- runPartA = fromJust . getFirst . snd . runWriter . flip execStateT Nothing
+
+-- interpretA :: Command a -> PartA a
+
+-- | MaybeT: Out of input
+type PartB = MaybeT (StateT [Int] (Writer [Int]))
+
+-- | Nothing: Block
+runPartB :: [Int] -> PartB a -> (([a], [Int]), [Int])
+runPartB buf = (first . first) fold . runWriter . flip runStateT buf . runMaybeT . some
+
+interpretB
+    :: Command a
+    -> PartB a
+interpretB = \case
+    CSnd x -> tell [x]
+    CRcv _ -> get >>= \case
+      []   -> mzero
+      x:xs -> put xs >> return x
+
+runB :: ProgState -> ProgState -> ([Int], [Int])
+runB = go [] []
+  where
+    go :: [Int] -> [Int] -> ProgState -> ProgState -> ([Int], [Int])
+    go bufa0 bufb0 pa0 pb0 = undefined
+    -- go bufa0 bufb0 pa0 pb0 = case (,) <$> pa1 <*> pb1 of
+    --     Nothing           -> (outa, outb)
+    --     Just (pa1', pb1') -> go (bufa1 ++ outa) (bufb1 ++ outb) pa1' pb1'
+      where
+        ((pa1,bufa1),outa) = runPartB bufa0 . runPromptM interpretB $ runTape pa0
+        ((pb1,bufb1),outb) = runPartB bufb0 . runPromptM interpretB $ runTape pb0
 
 day18b :: Challenge
-day18b = undefined
+day18b (parse->t0) = show $ runB pa pb
+  where
+    pa = PS t0 (M.singleton 'p' 0)
+    pb = PS t0 (M.singleton 'p' 1)
+
+-- day18a :: Challenge
+-- day18a = show
+--        . runPartA . runPromptM interpretA
+--        . runTape  . (`PS` M.empty)
+--        . parse
+
 
 -- type Reg = (Tape Op, M.Map String Int, Maybe Int, [Int])
 
@@ -259,3 +310,16 @@ day18b = undefined
 -- day18b :: Challenge
 -- -- day18b = show . take 3 . runTwoMany . parse
 -- day18b = undefined
+
+-- | Shifts the Tape to the left or right by a given amount
+move :: Int -> Tape a -> Maybe (Tape a)
+move n (Tape ls x rs) = case compare n 0 of
+    LT -> case ls of
+      []    -> Nothing
+      l:ls' -> move (n + 1) (Tape ls' l (x:rs))
+    EQ -> Just $ Tape ls x rs
+    GT -> case rs of
+      []    -> Nothing
+      r:rs' -> move (n - 1) (Tape (x:ls) r rs')
+
+
