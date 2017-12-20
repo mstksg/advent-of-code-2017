@@ -21,7 +21,6 @@ import           Control.Monad.Writer      (Writer, runWriter, tell)
 import           Data.Char                 (isAlpha)
 import           Data.Kind                 (Type)
 import           Data.Maybe                (fromJust, maybeToList)
-import           Data.Monoid               (First(..))
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
 
@@ -63,9 +62,18 @@ data Command :: Type -> Type where
     CRcv :: Int -> Command Int    -- ^ input is current value of buffer
     CSnd :: Int -> Command ()     -- ^ input is thing being sent
 
+-- | Context in which Tape commands are run.  Tape commands have access to
+-- an underlying 'Prompt Command' effect monad that allows it to 'Rcv' and
+-- 'Snd'.
+--
+-- Nothing = program terminates by running out of bounds
+type TapeProg = StateT ProgState (MaybeT (Prompt Command))
+runTapeProg :: TapeProg a -> ProgState -> Prompt Command (Maybe (a, ProgState))
+runTapeProg tp = runMaybeT . runStateT tp
+
 -- | Single step through program tape.  Nothing = program terminates (by
 -- jumping out of bounds)
-stepTape :: StateT ProgState (MaybeT (Prompt Command)) ()
+stepTape :: TapeProg ()
 stepTape = use (psTape . tFocus) >>= \case
     OSnd x -> do
       lift . lift . prompt . CSnd =<< addrVal x
@@ -92,16 +100,9 @@ stepTape = use (psTape . tFocus) >>= \case
       Just t' <- move n <$> use psTape
       psTape .= t'
 
--- | Repeatedly run the tape until it goes out of bounds
-runTape :: ProgState -> Prompt Command ProgState
-runTape ps = fmap fromJust
-           . runMaybeT
-           . flip execStateT ps
-           $ many stepTape
-
 -- | Context in which to interpret Command for Part A
 --
--- State parameter is the most resent sent item.  Writer parameter is all
+-- State parameter is the most recent sent item.  Writer parameter is all
 -- of the Rcv'd items.
 --
 -- State should probably be Accum instead, but Accum is in any usable
@@ -122,8 +123,8 @@ interpretA = \case
 day18a :: Challenge
 day18a = show
        . runPartA . runPromptM interpretA
-       . runTape  . (`PS` M.empty)
-       . parse
+       . runTapeProg (many stepTape)    -- stepTape until program terminates
+       . (`PS` M.empty) . parse
 
 -- | Context in which to interpret Command for Part B
 --
@@ -160,8 +161,7 @@ stepThread = StateT go
       where
         ((st', buf'), out) = runPartB buf
                            . runPromptM interpretB
-                           . runMaybeT
-                           . flip runStateT st
+                           . flip runTapeProg st
                            $ stepTape
         (stopped, st'') = case join st' of
           Nothing         -> (True , st   )
