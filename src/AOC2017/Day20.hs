@@ -1,18 +1,19 @@
 module AOC2017.Day20 (day20a, day20b) where
 
-import           AOC2017.Types        (Challenge)
-import           AOC2017.Util         ((!!!))
-import           Control.Applicative  (liftA2)
-import           Control.Lens         ((^..), _1, _2, _3, to)
-import           Control.Monad        (mfilter)
-import           Data.Foldable        (toList)
-import           Data.Void            (Void)
-import qualified Data.Map             as M
-import qualified Data.Set             as S
-import qualified Data.Vector          as V
-import qualified Linear               as L
-import qualified Text.Megaparsec      as P
-import qualified Text.Megaparsec.Char as P
+import           AOC2017.Types              (Challenge)
+import           AOC2017.Util               ((!!!))
+import           Control.Applicative        (liftA2)
+import           Control.Lens               ((^..), _1, _2, _3, to)
+import           Control.Monad              (mfilter)
+import           Data.Foldable              (toList)
+import           Data.Void                  (Void)
+import qualified Data.Map                   as M
+import qualified Data.Set                   as S
+import qualified Data.Vector                as V
+import qualified Linear                     as L
+import qualified Text.Megaparsec            as P
+import qualified Text.Megaparsec.Char       as P
+import qualified Text.Megaparsec.Char.Lexer as PL
 
 data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
            , _sVel :: !(V.Vector (Maybe (L.V3 Int)))
@@ -61,16 +62,13 @@ type Parser = P.Parsec Void String
 parseVector :: Parser (L.V3 Int)
 parseVector = do
     _ <- P.anyChar  *> P.char '='
-    x <- P.char '<' *> numParser
-    y <- P.char ',' *> numParser
-    z <- P.char ',' *> numParser
+    x <- P.char '<' *> parseNumber
+    y <- P.char ',' *> parseNumber
+    z <- P.char ',' *> parseNumber
     _ <- P.char '>'
     return $ L.V3 x y z
   where
-    numParser = do
-      neg <- maybe id (const negate) <$> P.optional (P.string "-")
-      digits <- P.many P.digitChar
-      return . neg $ read digits
+    parseNumber = PL.signed P.space PL.decimal
 
 parseLine :: Parser (L.V3 Int, L.V3 Int, L.V3 Int)
 parseLine = do
