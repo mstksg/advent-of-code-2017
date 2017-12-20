@@ -27,18 +27,16 @@ step s@S{..} = s { _sPos = p, _sVel = v }
 collide :: S -> S
 collide s@S{..} = s { _sPos = mfilter (`S.notMember` collisions) <$> _sPos }
   where
-    collisions = M.keysSet
-               . M.filter @Int (> 1)
-               . M.fromListWith (+)
-               . fmap (,1)
+    collisions = M.keysSet . M.filter @Int (> 1)
+               . M.fromListWith (+) . fmap (,1)
                $ foldMap toList _sPos
 
 dists :: S -> V.Vector (Maybe Int)
 dists = (fmap . fmap) (sum . fmap abs) . _sPos
 
 day20a :: Challenge
-day20a = show . (!!! 1000) . map V.minIndex
-       . scanl1 (<+>) . map dists
+day20a = show . (!!! 1000)
+       . map (V.minIndex . dists)
        . iterate step
        . parse
 
