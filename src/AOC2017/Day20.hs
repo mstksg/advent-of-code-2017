@@ -8,7 +8,11 @@ import           Control.Applicative (liftA2)
 import           Control.Monad       (mfilter)
 import           Data.Char           (isDigit)
 import           Data.Foldable       (toList)
+import           Data.List
 import           Data.List.Split     (splitOn)
+import           Data.Maybe          (fromJust)
+import           Data.Semigroup
+import           Debug.Trace
 import qualified Data.Map            as M
 import qualified Data.Set            as S
 import qualified Data.Vector         as V
@@ -42,10 +46,13 @@ day20a = show . V.minIndex
        . parse
 
 day20b :: Challenge
-day20b = show . length . (!!! 1000)
+day20b = show . length . fromJust . find stop
        . map (foldMap toList . _sPos)
        . iterate (collide . step)
        . parse
+  where
+    -- assumes there will be at least one particule left
+    stop = (> 1000) . minimum . map norm
 
 parse :: String -> S
 parse = (\case L.V3 r v a -> S r v a)
