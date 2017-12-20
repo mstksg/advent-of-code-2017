@@ -17,20 +17,20 @@ type Point = L.V2 Int
 follow :: Grid -> StateT (Point, Point) [] Char
 follow g = do
     -- (last position, current position)
-    (x0, x1)      <- get
-    Just currChar <- return $ gridAt x1
-    x2 <- case currChar of
+    (p0, p1)      <- get
+    Just currChar <- return $ gridAt p1
+    p2 <- case currChar of
         ' ' -> empty
-        '+' -> (+ x1) <$> lift [ L.V2 0    1
+        '+' -> (+ p1) <$> lift [ L.V2 0    1
                                , L.V2 0    (-1)
                                , L.V2 1    0
                                , L.V2 (-1) 0
                                ]
-        _   -> return $ x1 + (x1 - x0)
-    Just nextChar <- return $ gridAt x2
-    guard $ x2 /= x0
+        _   -> return $ p1 + (p1 - p0)
+    Just nextChar <- return $ gridAt p2
+    guard $ p2 /= p0
     guard $ nextChar `elem` "|-+" || isAlpha nextChar
-    put (x1, x2)
+    put (p1, p2)
     return nextChar
   where
     gridAt (L.V2 x y) = g ^? ix y . ix x
