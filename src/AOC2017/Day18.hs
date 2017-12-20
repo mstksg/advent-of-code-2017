@@ -20,7 +20,7 @@ import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer      (Writer, runWriter, tell)
 import           Data.Char                 (isAlpha)
 import           Data.Kind                 (Type)
-import           Data.Maybe                (fromJust)
+import           Data.Maybe                (fromJust, maybeToList)
 import           Data.Monoid               (First(..))
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
@@ -100,16 +100,22 @@ runTape ps = fmap fromJust
            $ many stepTape
 
 -- | Context in which to interpret Command for Part A
-type PartA = StateT (Maybe Int) (Writer (First Int))
+--
+-- State parameter is the most resent sent item.  Writer parameter is all
+-- of the Rcv'd items.
+--
+-- State should probably be Accum instead, but Accum is in any usable
+-- version of transformers yet.
+type PartA = StateT (Maybe Int) (Writer [Int])
 runPartA :: PartA a -> Int
-runPartA = fromJust . getFirst . snd . runWriter . flip execStateT Nothing
+runPartA = head . snd . runWriter . flip execStateT Nothing
 
 -- | Interpet Command for Part A
 interpretA :: Command a -> PartA a
 interpretA = \case
     CRcv x -> do
       when (x /= 0) $
-        lift . tell . First =<< get
+        lift . tell . maybeToList =<< get
       return x
     CSnd x -> put (Just x)
 
@@ -120,6 +126,10 @@ day18a = show
        . parse
 
 -- | Context in which to interpret Command for Part B
+--
+-- The State parameter is the input buffer, the Writer parameter is the
+-- emitted items.  Maybe is whether or not the thread runs out of input
+-- items
 type PartB = MaybeT (StateT [Int] (Writer [Int]))
 runPartB :: [Int] -> PartB a -> ((Maybe a, [Int]), [Int])
 runPartB buf = runWriter . flip runStateT buf . runMaybeT
@@ -175,3 +185,4 @@ day18b (parse->t) = show . length . concat
     Just ms = V.fromList [ T (PS t (M.singleton 'p' 0)) []
                          , T (PS t (M.singleton 'p' 1)) []
                          ]
+
