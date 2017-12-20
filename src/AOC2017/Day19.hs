@@ -2,6 +2,7 @@ module AOC2017.Day19 (day19a, day19b) where
 
 import           AOC2017.Types             (Challenge)
 import           Control.Applicative       (many, empty)
+import           Control.Lens              (ix, (^?))
 import           Control.Monad             (guard)
 import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.State (StateT, evalStateT, get, put)
@@ -32,7 +33,7 @@ follow g = do
     put (x1, x2)
     return nextChar
   where
-    gridAt   (L.V2 x y) = (V.!? x) =<< g V.!? y
+    gridAt (L.V2 x y) = g ^? ix y . ix x
 
 -- | Repeat search many times until a dead end is found, using 'many'
 followToTheEnd :: Grid -> StateT (Point, Point) [] String
