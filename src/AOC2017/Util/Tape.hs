@@ -11,6 +11,7 @@ module AOC2017.Util.Tape (
   , moveLeft, moveRight
   , move
   , moveLeftC, moveRightC
+  , moveC
   ) where
 
 import           AOC2017.Util
@@ -83,3 +84,9 @@ moveRightC (Tape ls x rs) = case rs of
           in  Tape [] l ls'
     r:rs' -> Tape (x:ls) r rs'
 
+-- | Shifts the Tape to the left or right by a given amount, cyclicly
+moveC :: Int -> Tape a -> Tape a
+moveC n = case compare n 0 of
+    LT -> (!!! abs n) . iterate moveLeftC
+    EQ -> id
+    GT -> (!!! n    ) . iterate moveRightC

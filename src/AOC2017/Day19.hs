@@ -42,7 +42,7 @@ followToTheEnd g = ('|':) <$> many (follow g)
 day19 :: Grid -> String
 day19 g = head . flip evalStateT p0 $ followToTheEnd g
   where
-    p0 = (L.V2 x0 (-1), L.V2 x0 0)
+    p0      = (L.V2 x0 (-1), L.V2 x0 0)
     Just x0 = V.elemIndex '|' (g V.! 0)
 
 day19a :: Challenge
