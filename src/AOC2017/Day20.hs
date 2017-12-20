@@ -31,13 +31,12 @@ collide s@S{..} = s { _sPos = mfilter (`S.notMember` collisions) <$> _sPos }
                . M.fromListWith (+) . fmap (,1)
                $ foldMap toList _sPos
 
-dists :: S -> V.Vector (Maybe Int)
-dists = (fmap . fmap) (sum . fmap abs) . _sPos
+norm :: L.V3 Int -> Int
+norm = sum . fmap abs
 
 day20a :: Challenge
-day20a = show . (!!! 1000)
-       . map (V.minIndex . dists)
-       . iterate step
+day20a = show . V.minIndex
+       . (fmap . fmap) norm . _sAcc
        . parse
 
 day20b :: Challenge
@@ -45,8 +44,6 @@ day20b = show . length . (!!! 1000)
        . map (foldMap toList . _sPos)
        . iterate (collide . step)
        . parse
-
--- * Parsers
 
 parse :: String -> S
 parse = (\case L.V3 r v a -> S r v a)
