@@ -2,17 +2,16 @@
 
 module AOC2017.Day20 (day20a, day20b) where
 
-import           AOC2017.Types                 (Challenge)
-import           AOC2017.Util                  ((!!!))
-import           Control.Applicative           (liftA2)
-import           Control.Lens                  ((^..), _1, _2, _3, to)
-import           Control.Monad                 (mfilter)
-import           Data.Char                     (isDigit)
-import           Data.Foldable                 (toList)
-import qualified Data.Map                      as M
-import qualified Data.Set                      as S
-import qualified Data.Vector                   as V
-import qualified Linear                        as L
+import           AOC2017.Types       (Challenge)
+import           AOC2017.Util        ((!!!))
+import           Control.Applicative (liftA2)
+import           Control.Monad       (mfilter)
+import           Data.Char           (isDigit)
+import           Data.Foldable       (toList)
+import qualified Data.Map            as M
+import qualified Data.Set            as S
+import qualified Data.Vector         as V
+import qualified Linear              as L
 
 data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
            , _sVel :: !(V.Vector (Maybe (L.V3 Int)))
@@ -55,15 +54,13 @@ day20b = show . length . (!!! 1000)
 -- * Parsers
 
 parse :: String -> S
-parse = mkS . map parseLine . lines
-  where
-    mkS pts = S (V.fromList (pts ^.. traverse . _1 . to Just))
-                (V.fromList (pts ^.. traverse . _2 . to Just))
-                (V.fromList (pts ^.. traverse . _3 . to Just))
+parse = (\case L.V3 r v a -> S r v a)
+      . traverse (fmap Just . parseLine)
+      . V.fromList . lines
 
-parseLine :: String -> (L.V3 Int, L.V3 Int, L.V3 Int)
+parseLine :: String -> L.V3 (L.V3 Int)
 parseLine (map read.words.onlyNums->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
-            = (L.V3 pX pY pZ, L.V3 vX vY vZ, L.V3 aX aY aZ)
+            = L.V3 (L.V3 pX pY pZ) (L.V3 vX vY vZ) (L.V3 aX aY aZ)
 parseLine _ = error "No parse"
 
 onlyNums :: String -> String
