@@ -22,7 +22,7 @@ data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
 step :: S -> S
 step s@S{..} = s { _sPos = p, _sVel = v }
   where
-    [_,v,p] = scanl1 (<+>) [_sAcc, _sVel, _sPos]
+    [_,v,p] = scanl1 ((V.zipWith . liftA2) (+)) [_sAcc, _sVel, _sPos]
 
 collide :: S -> S
 collide s@S{..} = s { _sPos = mfilter (`S.notMember` collisions) <$> _sPos }
@@ -45,13 +45,6 @@ day20b = show . length . (!!! 1000)
        . map (foldMap toList . _sPos)
        . iterate (collide . step)
        . parse
-
-(<+>)
-    :: Num a
-    => V.Vector (Maybe a)
-    -> V.Vector (Maybe a)
-    -> V.Vector (Maybe a)
-(<+>) = (V.zipWith . liftA2) (+)
 
 -- * Parsers
 
