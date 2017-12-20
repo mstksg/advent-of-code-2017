@@ -20,11 +20,9 @@ data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
   deriving Show
 
 step :: S -> S
-step s@S{..} = s { _sVel = v'
-                 , _sPos = (V.zipWith . liftA2) (+) _sPos v'
-                 }
+step s@S{..} = s { _sPos = p, _sVel = v }
   where
-    v' = (V.zipWith . liftA2) (+) _sVel _sAcc
+    [_,v,p] = scanl1 (<+>) [_sAcc, _sVel, _sPos]
 
 collide :: S -> S
 collide s@S{..} = s { _sPos = mfilter (`S.notMember` collisions) <$> _sPos }
@@ -40,7 +38,7 @@ dists = (fmap . fmap) (sum . fmap abs) . _sPos
 
 day20a :: Challenge
 day20a = show . (!!! 1000) . map V.minIndex
-       . scanl1 ((V.zipWith . liftA2) (+)) . map dists
+       . scanl1 (<+>) . map dists
        . iterate step
        . parse
 
@@ -50,6 +48,12 @@ day20b = show . length . (!!! 1000)
        . iterate (collide . step)
        . parse
 
+(<+>)
+    :: Num a
+    => V.Vector (Maybe a)
+    -> V.Vector (Maybe a)
+    -> V.Vector (Maybe a)
+(<+>) = (V.zipWith . liftA2) (+)
 
 -- * Parsers
 
