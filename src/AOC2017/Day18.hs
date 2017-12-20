@@ -18,9 +18,11 @@ import           Control.Monad.State       (StateT(..), execStateT, evalStateT, 
 import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer      (Writer, runWriter, tell)
+import           Data.Bifunctor
 import           Data.Char                 (isAlpha)
 import           Data.Kind                 (Type)
 import           Data.Maybe                (fromJust, maybeToList)
+import           Data.Tuple
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
 
@@ -68,11 +70,10 @@ data Command :: Type -> Type where
 --
 -- Nothing = program terminates by running out of bounds
 type TapeProg = MaybeT (StateT ProgState (Prompt Command))
-runTapeProg :: TapeProg a -> ProgState -> Prompt Command ProgState
-runTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
+execTapeProg :: TapeProg a -> ProgState -> Prompt Command ProgState
+execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
 
--- | Single step through program tape.  Nothing = program terminates (by
--- jumping out of bounds)
+-- | Single step through program tape.
 stepTape :: TapeProg ()
 stepTape = use (psTape . tFocus) >>= \case
     OSnd x -> do
@@ -108,8 +109,8 @@ stepTape = use (psTape . tFocus) >>= \case
 -- State should probably be Accum instead, but Accum is in any usable
 -- version of transformers yet.
 type PartA = StateT (Maybe Int) (Writer [Int])
-runPartA :: PartA a -> Int
-runPartA = head . snd . runWriter . flip execStateT Nothing
+execPartA :: PartA a -> Int
+execPartA = head . snd . runWriter . flip execStateT Nothing
 
 -- | Interpet Command for Part A
 interpretA :: Command a -> PartA a
@@ -122,8 +123,8 @@ interpretA = \case
 
 day18a :: Challenge
 day18a = show
-       . runPartA . runPromptM interpretA
-       . runTapeProg (many stepTape)    -- stepTape until program terminates
+       . execPartA . runPromptM interpretA
+       . execTapeProg (many stepTape)    -- stepTape until program terminates
        . (`PS` M.empty) . parse
 
 -- | Context in which to interpret Command for Part B
@@ -162,7 +163,7 @@ stepThread = StateT go
       where
         ((t', buf'), out) = runPartB buf
                           . runPromptM interpretB
-                          . flip runTapeProg st
+                          . flip execTapeProg st
                           $ stepTape
 
 -- | Single step through both threads.  Nothing = both threads terminate
