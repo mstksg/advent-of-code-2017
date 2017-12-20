@@ -42,6 +42,8 @@ library
                        AOC2017.Day17
                        AOC2017.Day18
                        AOC2017.Day19
+                       AOC2017.Day20
+                       AOC2017.Day21
   build-depends:       base >= 4.7 && < 5
                      , MonadPrompt
                      , aeson
