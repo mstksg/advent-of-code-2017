@@ -13,6 +13,9 @@ import qualified Linear                    as L
 type Grid  = V.Vector (V.Vector Char)
 type Point = L.V2 Int
 
+neighbors :: Point -> [Point]
+neighbors p0 = (+ p0) <$> [ L.V2 0 1, L.V2 0 (-1), L.V2 1 0, L.V2 (-1) 0 ]
+
 -- | Expand search by one step
 follow :: Grid -> StateT (Point, Point) [] Char
 follow g = do
@@ -21,11 +24,7 @@ follow g = do
     Just currChar <- return $ gridAt p1
     p2 <- case currChar of
         ' ' -> empty
-        '+' -> (+ p1) <$> lift [ L.V2 0    1
-                               , L.V2 0    (-1)
-                               , L.V2 1    0
-                               , L.V2 (-1) 0
-                               ]
+        '+' -> lift $ neighbors p1
         _   -> return $ p1 + (p1 - p0)
     Just nextChar <- return $ gridAt p2
     guard $ p2 /= p0

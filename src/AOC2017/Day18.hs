@@ -60,8 +60,8 @@ data ProgState = PS { _psTape :: Tape Op
 makeClassy ''ProgState
 
 data Command :: Type -> Type where
-    CRcv :: Int -> Command Int
-    CSnd :: Int -> Command ()
+    CRcv :: Int -> Command Int    -- ^ input is current value of buffer
+    CSnd :: Int -> Command ()     -- ^ input is thing being sent
 
 -- | Single step through program tape.  Nothing = program terminates (by
 -- jumping out of bounds)
