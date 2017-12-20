@@ -67,9 +67,9 @@ data Command :: Type -> Type where
 -- 'Snd'.
 --
 -- Nothing = program terminates by running out of bounds
-type TapeProg = StateT ProgState (MaybeT (Prompt Command))
-runTapeProg :: TapeProg a -> ProgState -> Prompt Command (Maybe (a, ProgState))
-runTapeProg tp = runMaybeT . runStateT tp
+type TapeProg = MaybeT (StateT ProgState (Prompt Command))
+runTapeProg :: TapeProg a -> ProgState -> Prompt Command ProgState
+runTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
 
 -- | Single step through program tape.  Nothing = program terminates (by
 -- jumping out of bounds)
@@ -157,15 +157,13 @@ type MultiState = V.Vector 2 Thread
 stepThread :: StateT Thread Maybe [Int]
 stepThread = StateT go
   where
-    go (T st buf) = (out, T st'' buf') <$ guard (not stopped)
+    go :: Thread -> Maybe ([Int], Thread)
+    go (T st buf) = (out,) . (`T` buf') <$> t'
       where
-        ((st', buf'), out) = runPartB buf
-                           . runPromptM interpretB
-                           . flip runTapeProg st
-                           $ stepTape
-        (stopped, st'') = case join st' of
-          Nothing         -> (True , st   )
-          Just (_, newSt) -> (False, newSt)
+        ((t', buf'), out) = runPartB buf
+                          . runPromptM interpretB
+                          . flip runTapeProg st
+                          $ stepTape
 
 -- | Single step through both threads.  Nothing = both threads terminate
 stepThreads :: StateT MultiState Maybe [Int]
