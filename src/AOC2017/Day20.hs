@@ -50,7 +50,8 @@ day20a = show . (!!! 1000) . map V.minIndex
        . parse
 
 day20b :: Challenge
-day20b = show . length . (!!! 1000) . map (foldMap toList . _sPos)
+day20b = show . length . (!!! 1000)
+       . map (foldMap toList . _sPos)
        . iterate (collide . step)
        . parse
 
@@ -61,10 +62,8 @@ type Parser = P.Parsec Void String
 
 parseVector :: Parser (L.V3 Int)
 parseVector = do
-    _ <- P.anyChar  *> P.char '='
-    x <- P.char '<' *> parseNumber
-    y <- P.char ',' *> parseNumber
-    z <- P.char ',' *> parseNumber
+    _ <- P.anyChar *> P.string "=<"
+    [x, y, z] <- parseNumber `P.sepBy` P.char ','
     _ <- P.char '>'
     return $ L.V3 x y z
   where
