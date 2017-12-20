@@ -7,13 +7,13 @@ import           Data.List         (elemIndices, foldl')
 unshift :: a -> Tape a -> Tape a
 unshift y (Tape ls x rs) = Tape (x:ls) y rs
 
-run :: Int -> Tape Int -> Int -> Tape Int
-run n t0 x = unshift x . moveC n $ t0
+step :: Int -> Tape Int -> Int -> Tape Int
+step n t0 x = unshift x . moveC n $ t0
 
 day17a :: Challenge
 day17a (read->n) = show r
   where
-    Tape _ _ (r:_) = foldl' (run n) (Tape [] 0 []) [1 .. 2017]
+    Tape _ _ (r:_) = foldl' (step n) (Tape [] 0 []) [1 .. 2017]
 
 day17b :: Challenge
 day17b (read->n) = show . last
