@@ -37,7 +37,8 @@ norm = sum . fmap abs
 
 day20a :: Challenge
 day20a = show . V.minIndex
-       . (fmap . fmap) norm . _sAcc
+       . (fmap . fmap . fmap) norm
+       . (\case S r v a -> V.zipWith3 L.V3 a v r)
        . parse
 
 day20b :: Challenge
