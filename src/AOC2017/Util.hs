@@ -2,6 +2,7 @@ module AOC2017.Util (
     strip
   , iterateMaybe
   , (!!!)
+  , dup
   ) where
 
 import           Data.List
@@ -18,6 +19,6 @@ strip = T.unpack . T.strip . T.pack
 
 iterateMaybe :: (a -> Maybe a) -> a -> [a]
 iterateMaybe f x0 = x0 : unfoldr (fmap dup . f) x0
-  where
-    dup x = (x,x)
 
+dup :: a -> (a, a)
+dup x = (x, x)
