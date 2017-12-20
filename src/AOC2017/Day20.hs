@@ -8,6 +8,7 @@ import           Control.Applicative (liftA2)
 import           Control.Monad       (mfilter)
 import           Data.Char           (isDigit)
 import           Data.Foldable       (toList)
+import           Data.List.Split     (splitOn)
 import qualified Data.Map            as M
 import qualified Data.Set            as S
 import qualified Data.Vector         as V
@@ -51,11 +52,9 @@ parse = (\case L.V3 r v a -> S r v a)
       . V.fromList . lines
 
 parseLine :: String -> L.V3 (L.V3 Int)
-parseLine (map read.words.onlyNums->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
+parseLine (map(read.filter numChar).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
             = L.V3 (L.V3 pX pY pZ) (L.V3 vX vY vZ) (L.V3 aX aY aZ)
 parseLine _ = error "No parse"
 
-onlyNums :: String -> String
-onlyNums = map $ \c -> if isDigit c || c == '-'
-                         then c
-                         else ' '
+numChar :: Char -> Bool
+numChar c = isDigit c || c == '-'
