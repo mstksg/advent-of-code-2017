@@ -19,10 +19,10 @@ type Rule = M.Map Grid Grid
 --
 -- Thanks to https://en.wikipedia.org/wiki/Dihedral_group_of_order_8
 symmetries :: Grid -> [Grid]
-symmetries g = rots ++ (mirror <$> rots)
+symmetries g = do
+    r <- take 4 (iterate rot90 g)   -- from the four rotations
+    [r, mirror r]                   -- ... include the rotation plus its flip
   where
-    -- all rotations
-    rots = take 4 (iterate rot90 g)
     -- rotate 90 degrees
     rot90 = map reverse . transpose
     -- flip
