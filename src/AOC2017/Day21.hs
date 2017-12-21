@@ -3,13 +3,11 @@
 module AOC2017.Day21 (day21a, day21b) where
 
 import           AOC2017.Types   (Challenge)
-import           AOC2017.Util
-import           Control.Lens
-import           Data.List
-import           Data.List.Split
+import           AOC2017.Util    ((!!!), strip)
+import           Control.Lens    (over, Traversal')
+import           Data.List       (transpose)
+import           Data.List.Split (chunksOf, splitOn)
 import qualified Data.Map        as M
-import qualified Data.Vector     as V
-import qualified Linear          as L
 
 type Grid = [[Bool]]
 
@@ -37,15 +35,16 @@ parse = M.unions . map (M.fromList . parseLine) . lines
       where
         gridIn  = fmap (== '#') <$> xs
         gridOut = fmap (== '#') <$> ys
+    parseLine _ = error "No parse"
 
 -- | A traversal over subgrids of a grid
 subgrids :: Int -> Traversal' Grid Grid
-subgrids n f = fmap joinGrid . (traverse . traverse) f . splitGrid n
+subgrids n f = fmap joinGrid . (traverse . traverse) f . splitGrid
   where
-    splitGrid :: Int -> Grid -> [[Grid]]
-    splitGrid n = transpose
-                . map (map transpose . chunksOf n . transpose)
-                . chunksOf n
+    splitGrid :: Grid -> [[Grid]]
+    splitGrid = transpose
+              . map (map transpose . chunksOf n . transpose)
+              . chunksOf n
     joinGrid :: [[Grid]] -> Grid
     joinGrid = transpose . concatMap (transpose . concat)
 
