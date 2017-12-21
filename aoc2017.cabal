@@ -55,6 +55,7 @@ library
                      , filepath
                      , finite-typelits
                      , grid
+                     , hmatrix
                      , lens
                      , linear
                      , megaparsec

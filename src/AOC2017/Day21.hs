@@ -2,14 +2,16 @@
 
 module AOC2017.Day21 (day21a, day21b) where
 
-import           AOC2017.Types   (Challenge)
-import           AOC2017.Util    ((!!!), strip)
-import           Control.Lens    (over, Traversal')
-import           Data.List       (transpose)
-import           Data.List.Split (chunksOf, splitOn)
-import qualified Data.Map        as M
+import           AOC2017.Types         (Challenge)
+import           AOC2017.Util          ((!!!), strip)
+import           Control.Lens          (over, Traversal')
+import           Data.Bool
+import           Data.List             (transpose)
+import           Data.List.Split       (chunksOf, splitOn)
+import qualified Data.Map              as M
+import qualified Numeric.LinearAlgebra as H
 
-type Grid = [[Bool]]
+type Grid = H.Matrix H.I
 
 type Rule = M.Map Grid Grid
 
@@ -24,9 +26,9 @@ symmetries g = do
     [r, mirror r]                   -- ... include the rotation plus its flip
   where
     -- rotate 90 degrees
-    rot90 = map reverse . transpose
-    -- flip
-    mirror = reverse
+    rot90 = H.tr . H.flipud
+    -- flip about diagonal
+    mirror = H.tr
 
 parse :: String -> Rule
 parse = M.unions . map (M.fromList . parseLine) . lines
@@ -35,33 +37,30 @@ parse = M.unions . map (M.fromList . parseLine) . lines
     parseLine (map(splitOn "/".strip).splitOn"=>"->[xs,ys]) =
           [ (g, gridOut) | g <- symmetries gridIn ]
       where
-        gridIn  = fmap (== '#') <$> xs
-        gridOut = fmap (== '#') <$> ys
+        el '#' = 1
+        el _   = 0
+        gridIn  = H.fromLists . (map . map) el $ xs
+        gridOut = H.fromLists . (map . map) el $ ys
     parseLine _ = error "No parse"
 
 -- | A traversal over subgrids of a grid
 subgrids :: Int -> Traversal' Grid Grid
-subgrids n f = fmap joinGrid . (traverse . traverse) f . splitGrid
-  where
-    splitGrid :: Grid -> [[Grid]]
-    splitGrid = transpose
-              . map (map transpose . chunksOf n . transpose)
-              . chunksOf n
-    joinGrid :: [[Grid]] -> Grid
-    joinGrid = transpose . concatMap (transpose . concat)
+subgrids n f = fmap H.fromBlocks
+             . (traverse . traverse) f
+             . H.toBlocksEvery n n
 
 step :: Rule -> Grid -> Grid
 step r g = over (subgrids n) (r M.!) g
   where
-    n | length g `mod` 2 == 0 = 2
-      | length g `mod` 3 == 0 = 3
+    n | H.cols g `mod` 2 == 0 = 2
+      | H.cols g `mod` 3 == 0 = 3
       | otherwise             = error "hello there"
 
 day21 :: Int -> Rule -> Int
-day21 n r = length . filter id . concat
+day21 n r = fromIntegral . H.sumElements
           $ iterate (step r) grid0 !!! n
   where
-    grid0 = map (== '#') <$> [".#.","..#","###"]
+    grid0 = H.fromLists [[0,1,0],[0,0,1],[1,1,1]]
 
 day21a :: Challenge
 day21a = show . day21 5 . parse
