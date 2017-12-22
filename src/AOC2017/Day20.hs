@@ -3,7 +3,6 @@
 module AOC2017.Day20 (day20a, day20b) where
 
 import           AOC2017.Types       (Challenge)
-import           AOC2017.Util        ((!!!))
 import           Control.Applicative (liftA2)
 import           Control.Monad       (mfilter)
 import           Data.Char           (isDigit)
@@ -11,8 +10,6 @@ import           Data.Foldable       (toList)
 import           Data.List
 import           Data.List.Split     (splitOn)
 import           Data.Maybe          (fromJust)
-import           Data.Semigroup
-import           Debug.Trace
 import qualified Data.Map            as M
 import qualified Data.Set            as S
 import qualified Data.Vector         as V

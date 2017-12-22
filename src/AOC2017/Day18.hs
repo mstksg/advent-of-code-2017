@@ -12,17 +12,15 @@ import           AOC2017.Types             (Challenge)
 import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move, unsafeTape)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
-import           Control.Monad             (join, guard, when)
+import           Control.Monad             (guard, when)
 import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
 import           Control.Monad.State       (StateT(..), execStateT, evalStateT, get, put)
 import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer      (Writer, runWriter, tell)
-import           Data.Bifunctor
 import           Data.Char                 (isAlpha)
 import           Data.Kind                 (Type)
 import           Data.Maybe                (fromJust, maybeToList)
-import           Data.Tuple
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
 

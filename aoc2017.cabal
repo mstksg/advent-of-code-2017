@@ -101,6 +101,7 @@ executable aoc2017
                      , finite-typelits
                      , optparse-applicative
                      , text
+                     , time
   default-language:    Haskell2010
 
 test-suite aoc2017-test
