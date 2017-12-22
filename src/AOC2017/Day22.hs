@@ -1,102 +1,84 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module AOC2017.Day22 (day22a, day22b) where
 
-import           AOC2017.Types (Challenge)
-import           Debug.Trace
-import           AOC2017.Util
-import           Control.Lens
-import qualified Data.Map      as M
-import qualified Linear        as L
-
-type World = M.Map (L.V2 Int) Bool
-
-data Dir = N | E | S | W
+import           AOC2017.Types             (Challenge)
+import           Control.Lens              (makeClassy, use, at, non, zoom, (+=), (<<>=))
+import           Control.Monad             (replicateM)
+import           Control.Monad.Trans.State (State, state, evalState)
+import qualified Data.Map                  as M
+import qualified Linear                    as L
 
 data Flag = FC | FW | FI | FF
   deriving Eq
 
-data S = St { _sWorld :: M.Map (L.V2 Int) Bool
-            , _sVPos  :: L.V2 Int
-            , _sVDir  :: Dir
-            , _sInfec :: Int
-            }
+data Dir = N | E | S | W
+  deriving Enum
 
-cycFlag = \case
-    FC -> FW
-    FW -> FI
-    FI -> FF
-    FF -> FC
+instance Monoid Dir where
+    -- | identity rotation
+    mempty      = N
+    -- | compose rotations
+    mappend h t = toEnum $ (fromEnum h + fromEnum t) `mod` 4
 
-turnRight = \case
-    N -> E
-    E -> S
-    S -> W
-    W -> N
+data St = MkSt { _sWorld :: !(M.Map (L.V2 Int) Flag)
+               , _sPos   :: !(L.V2 Int)
+               , _sDir   :: !Dir
+               }
+makeClassy ''St
 
-turnLeft = turnRight . turnRight . turnRight
-
-delt = \case
+delta :: Dir -> L.V2 Int
+delta = \case
     N -> L.V2 0 1
     E -> L.V2 1 0
     S -> L.V2 0 (-1)
     W -> L.V2 (-1) 0
 
-step :: S -> S
-step St{..} = St w' p' d' i'
-  where
-    currPos = _sWorld ^. at _sVPos . non False
-    d' | currPos   = turnRight _sVDir
-       | otherwise = turnLeft _sVDir
-    p' = _sVPos + delt d'
-    i' | currPos = _sInfec
-       | otherwise = _sInfec + 1
-    w' = _sWorld & at _sVPos . non False %~ not
+-- | Lift a 'State Flag Dir' (modify a Flag and produce a direction change)
+-- to a 'State St Flag' (modify the simulation state and produce a new
+-- Flag)
+step
+    :: State Flag Dir
+    -> State St Flag
+step stF = do
+    p      <- use sPos
+    turn   <- zoom (sWorld . at p . non FC) stF
+    newDir <- sDir <<>= turn
+    sPos   += delta newDir
+    use (sWorld . at p . non FC)
 
-parse :: String -> M.Map (L.V2 Int) Bool
-parse = M.unions . map g . zip [0..] . reverse . lines
+day22 :: Int -> State Flag Dir -> M.Map (L.V2 Int) Flag -> Int
+day22 n stF w0 = length . filter (== FI)
+               $ evalState (replicateM n (step stF)) st0
   where
-    g (i, w) = M.fromList . map h . zip [0..] $ ((== '#') <$> w)
-      where
-        h (j, c) = (L.V2 j i, c)
+    st0 = MkSt w0 p0 N
+    p0  = (`div` 2) <$> fst (M.findMax w0)
 
 day22a :: Challenge
-day22a (parse->w) = show . _sInfec $ iterate step (St w mid N 0) !!! 1e4
+day22a = show . day22 1e4 partA . parse
   where
-    mid = fmap (`div` 2) . fst $ M.findMax w
-
-data S2 = St2 { _s2World :: M.Map (L.V2 Int) Flag
-              , _s2VPos  :: L.V2 Int
-              , _s2VDir  :: Dir
-              , _s2Infec :: Int
-              }
-
-parse2 :: String -> M.Map (L.V2 Int) Flag
-parse2 = M.unions . map g . zip [0..] . reverse . lines
-  where
-    fl '.' = FC
-    fl '#' = FI
-    g (i, w) = M.fromList . map h . zip [0..] $ (fl <$> w)
-      where
-        h (j, c) = (L.V2 j i, c)
-
-step2 :: S2 -> S2
-step2 St2{..} = St2 w' p' d' i'
-  where
-    currPos = _s2World ^. at _s2VPos . non FC
-    d' = _s2VDir & case currPos of
-                     FC -> turnLeft
-                     FW -> id
-                     FI -> turnRight
-                     FF -> turnRight . turnRight
-    p' = _s2VPos + delt d'
-    i' = case currPos of
-           FW -> _s2Infec + 1
-           _  -> _s2Infec
-    w' = _s2World & at _s2VPos . non FC %~ cycFlag
+    partA :: State Flag Dir
+    partA = state $ \case
+      FC -> (W, FI)
+      FI -> (E, FC)
+      _  -> error "Shouldn't happen"
 
 day22b :: Challenge
-day22b (parse2->w) = show . _s2Infec $ iterate step2 (St2 w mid N 0) !!! 1e7
+day22b = show . day22 1e7 partB . parse
   where
-    mid = fmap (`div` 2) . fst $ M.findMax w
+    partB :: State Flag Dir
+    partB = state $ \case
+      FC -> (W, FW)
+      FW -> (N, FI)
+      FI -> (E, FF)
+      FF -> (S, FC)
 
+parse :: String -> M.Map (L.V2 Int) Flag
+parse = M.unions . zipWith mkRow [0..] . reverse . lines
+  where
+    fl = \case '#' -> FI
+               _   -> FC
+    mkRow y = M.fromList . zip ixes . map fl
+      where
+        ixes = [ L.V2 x y | x <- [0..] ]
