@@ -17,9 +17,7 @@ data Dir = N | E | S | W
   deriving Enum
 
 instance Monoid Dir where
-    -- | identity rotation
     mempty      = N
-    -- | compose rotations
     mappend h t = toEnum $ (fromEnum h + fromEnum t) `mod` 4
 
 data St = MkSt { _sWorld :: !(M.Map (L.V2 Int) Flag)
@@ -36,11 +34,11 @@ delta = \case
     W -> L.V2 (-1) 0
 
 -- | Lift a 'State Flag Dir' (modify a Flag and produce a direction change)
--- to a 'State St Flag' (modify the simulation state and produce a new
--- Flag)
+-- to a 'State St Flag' (modify the simulation state and produce the
+-- updated Flag)
 step
-    :: State Flag Dir
-    -> State St Flag
+    :: State Flag Dir   -- ^ Modify a Flag and produce a direction change
+    -> State St Flag    -- ^ Modify the state and produce the updated Flag
 step stF = do
     p      <- use sPos
     turn   <- zoom (sWorld . at p . non FC) stF
@@ -60,8 +58,8 @@ day22a = show . day22 1e4 partA . parse
   where
     partA :: State Flag Dir
     partA = state $ \case
-      FC -> (W, FI)
-      FI -> (E, FC)
+      FC -> (W, FI)         -- turn left, become Infected
+      FI -> (E, FC)         -- turn right, become Clean
       _  -> error "Shouldn't happen"
 
 day22b :: Challenge
@@ -69,10 +67,10 @@ day22b = show . day22 1e7 partB . parse
   where
     partB :: State Flag Dir
     partB = state $ \case
-      FC -> (W, FW)
-      FW -> (N, FI)
-      FI -> (E, FF)
-      FF -> (S, FC)
+      FC -> (W, FW)         -- turn left, become Weakened
+      FW -> (N, FI)         -- no turn, become Infected
+      FI -> (E, FF)         -- turn right, become Flagged
+      FF -> (S, FC)         -- turn around, become Clean
 
 parse :: String -> M.Map (L.V2 Int) Flag
 parse = M.unions . zipWith mkRow [0..] . reverse . lines
