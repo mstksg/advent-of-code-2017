@@ -11,7 +11,37 @@ import qualified Data.Map        as M
 
 type Grid = [[Bool]]
 
-type Rule = M.Map Grid Grid
+type Rules = M.Map Grid Grid
+
+-- | A traversal over subgrids of a grid
+subgrids :: Int -> Traversal' Grid Grid
+subgrids n f = fmap joinGrid . (traverse . traverse) f . splitGrid
+  where
+    splitGrid :: Grid -> [[Grid]]
+    splitGrid = transpose
+              . map (map transpose . chunksOf n . transpose)
+              . chunksOf n
+    joinGrid :: [[Grid]] -> Grid
+    joinGrid = transpose . concatMap (transpose . concat)
+
+step :: Rules -> Grid -> Grid
+step r g = over (subgrids n) (r M.!) g
+  where
+    n | length g `mod` 2 == 0 = 2
+      | length g `mod` 3 == 0 = 3
+      | otherwise             = error "hello there"
+
+day21 :: Int -> Rules -> Int
+day21 n r = length . filter id . concat
+          $ iterate (step r) grid0 !!! n
+  where
+    grid0 = map (== '#') <$> [".#.","..#","###"]
+
+day21a :: Challenge
+day21a = show . day21 5 . parse
+
+day21b :: Challenge
+day21b = show . day21 18 . parse
 
 -- | All 8 symmetries (elements of D8)
 --
@@ -28,7 +58,7 @@ symmetries g = do
     -- flip
     mirror = reverse
 
-parse :: String -> Rule
+parse :: String -> Rules
 parse = M.unions . map (M.fromList . parseLine) . lines
   where
     parseLine :: String -> [(Grid, Grid)]
@@ -39,32 +69,3 @@ parse = M.unions . map (M.fromList . parseLine) . lines
         gridOut = fmap (== '#') <$> ys
     parseLine _ = error "No parse"
 
--- | A traversal over subgrids of a grid
-subgrids :: Int -> Traversal' Grid Grid
-subgrids n f = fmap joinGrid . (traverse . traverse) f . splitGrid
-  where
-    splitGrid :: Grid -> [[Grid]]
-    splitGrid = transpose
-              . map (map transpose . chunksOf n . transpose)
-              . chunksOf n
-    joinGrid :: [[Grid]] -> Grid
-    joinGrid = transpose . concatMap (transpose . concat)
-
-step :: Rule -> Grid -> Grid
-step r g = over (subgrids n) (r M.!) g
-  where
-    n | length g `mod` 2 == 0 = 2
-      | length g `mod` 3 == 0 = 3
-      | otherwise             = error "hello there"
-
-day21 :: Int -> Rule -> Int
-day21 n r = length . filter id . concat
-          $ iterate (step r) grid0 !!! n
-  where
-    grid0 = map (== '#') <$> [".#.","..#","###"]
-
-day21a :: Challenge
-day21a = show . day21 5 . parse
-
-day21b :: Challenge
-day21b = show . day21 18 . parse
