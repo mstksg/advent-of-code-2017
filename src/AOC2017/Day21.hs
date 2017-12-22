@@ -4,7 +4,6 @@ module AOC2017.Day21 (day21a, day21b) where
 
 import           AOC2017.Types   (Challenge)
 import           AOC2017.Util    ((!!!), strip)
-import           Control.Lens    (over, Traversal')
 import           Data.List       (transpose)
 import           Data.List.Split (chunksOf, splitOn)
 import qualified Data.Map        as M
@@ -13,19 +12,18 @@ type Grid = [[Bool]]
 
 type Rules = M.Map Grid Grid
 
--- | A traversal over subgrids of a grid
-subgrids :: Int -> Traversal' Grid Grid
-subgrids n f = fmap joinGrid . (traverse . traverse) f . splitGrid
-  where
-    splitGrid :: Grid -> [[Grid]]
-    splitGrid = transpose
-              . map (map transpose . chunksOf n . transpose)
-              . chunksOf n
-    joinGrid :: [[Grid]] -> Grid
-    joinGrid = transpose . concatMap (transpose . concat)
+-- | Split a grid into a grid of subgrids
+splitGrid :: Int -> Grid -> [[Grid]]
+splitGrid n = transpose
+            . map (map transpose . chunksOf n . transpose)
+            . chunksOf n
+
+-- | Join a grid of subgrids into a grid
+joinGrid :: [[Grid]] -> Grid
+joinGrid = transpose . concatMap (transpose . concat)
 
 step :: Rules -> Grid -> Grid
-step r g = over (subgrids n) (r M.!) g
+step r g = joinGrid . (map . map) (r M.!) . splitGrid n $ g
   where
     n | length g `mod` 2 == 0 = 2
       | length g `mod` 3 == 0 = 3
