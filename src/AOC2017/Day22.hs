@@ -1,6 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 module AOC2017.Day22 (day22a, day22b) where
 
 import           AOC2017.Types             (Challenge)
@@ -12,10 +9,8 @@ import qualified Linear                    as L
 
 data Flag = FC | FW | FI | FF
   deriving Eq
-
 data Dir = N | E | S | W
   deriving Enum
-
 instance Monoid Dir where
     mempty      = N
     mappend h t = toEnum $ (fromEnum h + fromEnum t) `mod` 4
@@ -28,10 +23,10 @@ makeClassy ''St
 
 delta :: Dir -> L.V2 Int
 delta = \case
-    N -> L.V2 0 1
-    E -> L.V2 1 0
-    S -> L.V2 0 (-1)
-    W -> L.V2 (-1) 0
+    N -> L.V2   0    1
+    E -> L.V2   1    0
+    S -> L.V2   0  (-1)
+    W -> L.V2 (-1)   0
 
 -- | Lift a 'State Flag Dir' (modify a Flag and produce a direction change)
 -- to a 'State St Flag' (modify the simulation state and produce the
@@ -46,15 +41,15 @@ step stF = do
     sPos   += delta newDir
     use (sWorld . at p . non FC)
 
-day22 :: Int -> State Flag Dir -> M.Map (L.V2 Int) Flag -> Int
-day22 n stF w0 = length . filter (== FI)
+day22 :: State Flag Dir -> Int -> M.Map (L.V2 Int) Flag -> Int
+day22 stF n w0 = length . filter (== FI)
                $ evalState (replicateM n (step stF)) st0
   where
     st0 = MkSt w0 p0 N
     p0  = (`div` 2) <$> fst (M.findMax w0)
 
 day22a :: Challenge
-day22a = show . day22 1e4 partA . parse
+day22a = show . day22 partA 1e4 . parse
   where
     partA :: State Flag Dir
     partA = state $ \case
@@ -63,7 +58,7 @@ day22a = show . day22 1e4 partA . parse
       _  -> error "Shouldn't happen"
 
 day22b :: Challenge
-day22b = show . day22 1e7 partB . parse
+day22b = show . day22 partB 1e7 . parse
   where
     partB :: State Flag Dir
     partB = state $ \case

@@ -81,8 +81,10 @@ library
                        MonadComprehensions
                        MultiWayIf
                        NumDecimals
+                       RankNTypes
                        RecordWildCards
                        ScopedTypeVariables
+                       TemplateHaskell
                        TupleSections
                        TypeApplications
                        ViewPatterns
