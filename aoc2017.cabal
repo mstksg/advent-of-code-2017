@@ -51,6 +51,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , MonadPrompt
                      , aeson
+                     , arithmoi
                      , bytestring
                      , comonad
                      , containers >= 0.5.10.2
