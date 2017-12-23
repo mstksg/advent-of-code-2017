@@ -152,7 +152,8 @@ day23a = show
        . (`PS` M.empty) . parse
 
 day23b :: Challenge
-day23b = TL.unpack . pShow . toDay23 . IM.fromList . toList . parse
+-- day23b = TL.unpack . pShow . toDay23 . IM.fromList . toList . parse
+day23b = undefined
 -- day23b :: Challenge
 -- day23b = show . view (psRegs . at 'p' . non 0) . unsafePerformIO . runPartB
 --        . runPromptM interpretB
@@ -192,49 +193,37 @@ data Day23 = DWhile Addr Day23
            | Day23 :+ Day23
            | DTerm
            | DDebug (IM.IntMap Op)
-           -- | DDebug String
   deriving Show
 
-toDay23 :: IM.IntMap Op -> Day23
-toDay23 opMap = case minWhile of
-    Nothing       -> DDebug opMap
-    Just (i,src) -> case IM.splitLookup i opMap of
-      (befJump, Just jumpTarg, aftJump)
-        | IM.null befJump -> -- loop starts here
-            case lookupIMMax src of
-              Nothing -> error "huhh"
-              Just (bigLoopI, bigLoopC) -> do
-                case IM.splitLookup bigLoopI (IM.insert i jumpTarg aftJump) of
-                  (inWhile, Just _, aftWhile) ->
-                    DWhile bigLoopC (toDay23 inWhile)
-                      :+ toDay23 aftWhile
-            -- mkWhiles src (IM.insert i jumpTarg aftJump)
-        | otherwise -> -- stuff before loop
-            -- let aftJump' = aftJump `IM.difference` src
-            -- in  DDebug befJump :+ toDay23 aftJump'
-            DDebug befJump :+ toDay23 (IM.insert i jumpTarg aftJump)
-        -- case jumpTarg of
-        --   Nothing ->
-        -- let next = case jumpTarg of
-        --              Nothing -> aftJump
-        --              Just jt -> IM.insert i jt aftJump
-        -- in  if | IM.null befJump -> DDebug next
-        --        | IM.null next    -> DDebug befJump
-        --        | otherwise       -> DSeq (DDebug befJump) (toDay23 next)
-  where
-    (jumps, noJumps) = flip IM.mapEither opMap $ \case
-        OBin bo r x -> Right (bo, r, x)
-        OJnz r j    -> Left (r, j)
-    (ifs, whiles) = IM.partition ((> 0) . snd) jumps
-    ifMap = IM.fromList
-          . map (\(i, (r, j)) -> (i, (r, i + j)))
-          $ IM.toList ifs
-    whileMap = IM.fromListWith IM.union
-             . map (\(i,(r, j)) -> (i + j, IM.singleton i r))
-             $ IM.toList whiles
-    minWhile = lookupIMMin whileMap
-    -- mkWhiles :: IM.IntMap Addr -> IM.IntMap Op -> Day23
-    -- mkWhiles = 
+-- toDay23 :: IM.IntMap Op -> Day23
+-- toDay23 opMap = case minWhile of
+--     Nothing       -> DDebug opMap
+--     Just (i,src) -> case IM.splitLookup i opMap of
+--       (befJump, Just jumpTarg, aftJump)
+--         | IM.null befJump -> -- loop starts here
+--             case lookupIMMax src of
+--               Nothing -> error "huhh"
+--               Just (bigLoopI, bigLoopC) ->
+--                 case IM.splitLookup bigLoopI (IM.insert i jumpTarg aftJump) of
+--                   (inWhile, Just _, aftWhile) ->
+--                     DWhile bigLoopC (toDay23 inWhile)
+--                       :+ toDay23 aftWhile
+--         | otherwise -> -- stuff before loop
+--             DDebug befJump :+ toDay23 (IM.insert i jumpTarg aftJump)
+--   where
+--     (jumps, noJumps) = flip IM.mapEither opMap $ \case
+--         OBin bo r x -> Right (bo, r, x)
+--         OJnz r j    -> Left (r, j)
+--     (ifs, whiles) = IM.partition ((> 0) . snd) jumps
+--     ifMap = IM.fromList
+--           . map (\(i, (r, j)) -> (i, (r, i + j)))
+--           $ IM.toList ifs
+--     whileMap = IM.fromListWith IM.union
+--              . map (\(i,(r, j)) -> (i + j, IM.singleton i r))
+--              $ IM.toList whiles
+--     minWhile = lookupIMMin whileMap
+--     unIf :: IM.IntMap Op -> Day23
+--     unIf = _
 
 lookupIMMin :: IM.IntMap a -> Maybe (Int, a)
 lookupIMMin m | IM.null m = Nothing
