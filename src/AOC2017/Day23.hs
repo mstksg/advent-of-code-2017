@@ -1,9 +1,12 @@
-module AOC2017.Day23 (day23a, day23b) where
+module AOC2017.Day23 (day23a, day23b, parse) where
 
 import           AOC2017.Types                    (Challenge)
 import           AOC2017.Util.Tape                (Tape(..), HasTape(..), unsafeTape, move)
 import           Control.Applicative              (many)
-import           Control.Lens                     (makePrisms, makeClassy, use, non, at, (.=), (%=), forMOf_)
+import           Control.Lens                     (set, view, use, at, non, _last, forMOf_, Iso', iso)
+import           Control.Lens.Operators           ((.=), (%=))
+import           Control.Lens.TH                  (makeClassy, makePrisms)
+import           Control.Lens.Tuple               (_1, _2, _3)
 import           Control.Monad.State              (StateT(..), lift)
 import           Control.Monad.Trans.Maybe        (MaybeT(..))
 import           Control.Monad.Writer             (Writer, runWriter, tell, Sum(..))
@@ -20,31 +23,44 @@ addr str = Right (read str)
 data BinOp = BOSet | BOSub | BOMul
   deriving (Show, Eq)
 makePrisms ''BinOp
-
 runBO :: BinOp -> Int -> Int -> Int
-runBO BOSet = const id
-runBO BOSub = (-)
-runBO BOMul = (*)
+runBO = \case { BOSet -> const id; BOSub -> (-); BOMul -> (*) }
+
+data JumpCond = JCNotZero | JCPrime
+  deriving (Show, Eq)
+runJC :: JumpCond -> Int -> Bool
+runJC = \case { JCNotZero -> (/= 0); JCPrime -> isPrime . fromIntegral }
 
 data Op = OBin BinOp Char Addr
-        | OJnz Addr Int
+        | OJmp JumpCond Addr Int
   deriving Show
+makePrisms ''Op
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
     "set":(x:_):(addr->y):_     -> OBin BOSet x y
     "sub":(x:_):(addr->y):_     -> OBin BOSub x y
     "mul":(x:_):(addr->y):_     -> OBin BOMul x y
-    "jnz":(addr->x):(read->y):_ -> OJnz x y
+    "jnz":(addr->x):(read->y):_ -> OJmp JCNotZero x y
+    "jpm":(addr->x):(read->y):_ -> OJmp JCPrime x y
     _                           -> error "Bad parse"
 
-parse :: String -> Tape Op
-parse = unsafeTape . map parseOp . lines
+parse :: String -> [Op]
+parse = map parseOp . lines
+
+-- | Replaces the two inner oops with a simple prime check
+optimize :: [Op] -> [Op]
+optimize = set (_last . _OJmp . _3) (-7)
+         . set (splot 8 . _2 . splot 17 . _1) [parseOp "jpm b 2"]
+  where
+    -- split by prefix and suffx
+    splot :: Int -> Iso' [a] ([a], [a])
+    splot n = iso (splitAt n) (uncurry (++))
 
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
-
+  deriving (Show)
 makeClassy ''ProgState
 
 -- | Context in which Tape commands are run.  Writer parameter records
@@ -64,10 +80,10 @@ stepTape = use (psTape . tFocus) >>= \case
       forMOf_ _BOMul bo $ \_ ->
         lift . lift $ tell (Sum 1)
       advance 1
-    OJnz x y -> do
+    OJmp jc x y -> do
       xVal <- addrVal x
-      let moveAmt | xVal /= 0 = y
-                  | otherwise = 1
+      let moveAmt | runJC jc xVal = y
+                  | otherwise     = 1
       advance moveAmt
   where
     addrVal (Left r)  = use (psRegs . at r . non 0)
@@ -79,10 +95,11 @@ stepTape = use (psTape . tFocus) >>= \case
 day23a :: Challenge
 day23a = show . getSum . snd
        . runTapeProg (many stepTape)    -- stepTape until program terminates
-       . (`PS` M.empty) . parse
+       . (`PS` M.empty) . unsafeTape
+       . parse
 
--- | hardcoded for now
 day23b :: Challenge
-day23b _ = show . length
-         . filter (not . isPrime)
-         $ [109900, 109917 .. 126900]
+day23b = show . view (_1 . _2 . psRegs . at 'h' . non 0)
+       . runTapeProg (many stepTape)
+       . (`PS` M.singleton 'a' 1) . unsafeTape
+       . optimize . parse
