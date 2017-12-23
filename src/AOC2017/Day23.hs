@@ -1,36 +1,15 @@
-{-# LANGUAGE GADTs          #-}
-{-# LANGUAGE KindSignatures #-}
-
 module AOC2017.Day23 (day23a, day23b) where
 
 import           AOC2017.Types                    (Challenge)
-import           AOC2017.Util
-import           AOC2017.Util.Tape
-import           Control.Applicative
-import           Control.Lens
-import           Control.Monad
-import           Control.Monad.Prompt
-import           Control.Monad.State
-import           Control.Monad.Trans.Class
-import           Control.Monad.Trans.Maybe
-import           Control.Monad.Writer
-import           Data.Bifunctor
-import           Data.Char
-import           Data.Foldable
-import           Data.Kind
-import           Data.Maybe
-import           Data.Tuple
-import           Debug.Trace
-import           Math.NumberTheory.Primes.Testing
-import           System.IO.Unsafe
-import           Text.Read                        (readMaybe)
-import qualified Data.IntMap                      as IM
-import qualified Data.IntSet                      as IS
+import           AOC2017.Util.Tape                (Tape(..), HasTape(..), unsafeTape, move)
+import           Control.Applicative              (many)
+import           Control.Lens                     (makePrisms, makeClassy, use, non, at, (.=), (%=), forMOf_)
+import           Control.Monad.State              (StateT(..), lift)
+import           Control.Monad.Trans.Maybe        (MaybeT(..))
+import           Control.Monad.Writer             (Writer, runWriter, tell, Sum(..))
+import           Data.Char                        (isAlpha)
+import           Math.NumberTheory.Primes.Testing (isPrime)
 import qualified Data.Map                         as M
-import qualified Data.Text                        as T
-import qualified Data.Text.Lazy                   as TL
-import qualified Data.Vector.Sized                as V
-import qualified Linear                           as L
 
 type Addr = Either Char Int
 
@@ -50,7 +29,6 @@ runBO BOMul = (*)
 data Op = OBin BinOp Char Addr
         | OJnz Addr Int
   deriving Show
-makePrisms ''Op
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
@@ -82,7 +60,7 @@ stepTape :: TapeProg ()
 stepTape = use (psTape . tFocus) >>= \case
     OBin bo x y -> do
       yVal <- addrVal y
-      psRegs . at x . non 0 %= \x -> runBO bo x yVal
+      psRegs . at x . non 0 %= \xVal -> runBO bo xVal yVal
       forMOf_ _BOMul bo $ \_ ->
         lift . lift $ tell (Sum 1)
       advance 1
