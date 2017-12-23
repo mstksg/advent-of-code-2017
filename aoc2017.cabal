@@ -66,6 +66,7 @@ library
                      , monad-control
                      , monad-loops
                      , mtl
+                     , pretty-simple
                      , split
                      , text
                      , transformers

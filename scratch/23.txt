@@ -1,0 +1,32 @@
+set b 99
+set c b
+jnz a 2
+  jnz 1 5
+mul b 100
+sub b -100000
+set c b
+sub c -17000    # a: 1, b: 109900, c: 126900
+  set f 1       
+  set d 2
+    set e 2
+      set g d
+      mul g e
+      sub g b         # g = (d * e) - b
+      jnz g 2         # if d*e == b, then f = 0, else f = 1.  so if d*e == b, incr h
+        set f 0
+      sub e -1
+      set g e
+      sub g b
+    jnz g -8
+    sub d -1
+    set g d
+    sub g b
+  jnz g -13       # jump to 11 unless d != b
+  jnz f 2         # if f == 0, increment h by 1
+    sub h -1        # increment h by 1, only if f != 0
+  set g b         # if b = c, then terminate
+  sub g c         # if b = c, then terminate
+  jnz g 2         # if g = 0, then terminate
+    jnz 1 3         # terminate here
+  sub b -17
+jnz 1 -23       # jump to 9, with b being 17 more every time
