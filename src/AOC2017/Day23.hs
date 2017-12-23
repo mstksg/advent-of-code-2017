@@ -1,7 +1,8 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 
-module AOC2017.Day23 (day23a, day23b) where
+-- module AOC2017.Day23 (day23a, day23b) where
+module AOC2017.Day23 where
 
 import           AOC2017.Types                    (Challenge)
 import           AOC2017.Util
@@ -22,7 +23,7 @@ import           Data.Maybe
 import           Data.Tuple
 import           Debug.Trace
 import           Math.NumberTheory.Primes.Testing (isPrime)
-import           System.IO.Unsafe
+import           Numeric.Natural
 import           Text.Pretty.Simple
 import           Text.Read                        (readMaybe)
 import qualified Data.IntMap                      as IM
@@ -30,8 +31,6 @@ import qualified Data.IntSet                      as IS
 import qualified Data.Map                         as M
 import qualified Data.Text                        as T
 import qualified Data.Text.Lazy                   as TL
-import qualified Data.Vector.Sized                as V
-import qualified Linear                           as L
 
 type Addr = Either Char Int
 
@@ -107,77 +106,41 @@ day23a = show . getSum . snd
 day23b :: Challenge
 day23b = undefined
 
--- day23b = TL.unpack . pShow . toDay23 . IM.fromList . toList . parse
--- day23b :: Challenge
--- day23b = show . view (psRegs . at 'p' . non 0) . unsafePerformIO . runPartB
---        . runPromptM interpretB
---        . execTapeProg stepInter
---        -- . (`PS` m0) . fromJust . move 12 . parse
---        . (`PS` m0) . parse
---   where
---     m0 = M.singleton 'a' 1
---     stepInter :: TapeProg ()
---     stepInter = do
---       regs <- use psRegs
---       currIx <- use $ psTape . tFocus . _1
---       let out = (currIx, map (\x -> (x, regs ^. at x . non 0)) ['a' .. 'h'])
---       (n,mp) <- fmap (fromMaybe (1, M.empty)) . lift . lift . prompt $ CAsk (show out)
---       psRegs %= M.union mp
---       res <- replicateM n (optional stepTape)
---       case sequence res of
---           Nothing -> return ()
---           Just _  -> stepInter
-
-    -- m0 = M.fromList $ zip ['a'..] [1,109900,126900,10,71833,0,2,0]
-    -- m0 = M.fromList $ zip ['a'..] [1,109900,126900,7,93038,0,7,0]
-    -- log = do
-    --   regs <- use psRegs
-    --   currIx <- use $ psTape . tFocus . _1
-    --   out  <- traceShowId <$> return (currIx, map (\x -> (x, regs ^. at x . non 0)) ['a' .. 'h'])
-    --   guard (length (snd out) > 1)
-      -- traceShowId <$> use (psRergs .)
-
-data BOTree = BOLeaf Addr
-            | BOAp BinOp BOTree BOTree
+data P1 = P1Bin BinOp Char Addr
+        | P1Jump Addr Natural
+        | P1While Addr (IM.IntMap P1)
   deriving Show
+makePrisms ''P1
 
-data Day23 = DWhile Addr Day23
-           | DIf Char Day23
-           | DSet (M.Map Char BOTree)
-           | Day23 :+ Day23
-           | DTerm
-           | DDebug (IM.IntMap Op)
-  deriving Show
+pass1 :: IM.IntMap Op -> IM.IntMap P1
+pass1 opMap = case IM.minViewWithKey whileMap of
+    Nothing -> IM.union (review _P1Bin  <$> noJumps)
+                        (review _P1Jump <$> ifs    )
+    Just ((lStart, lEnds), _) -> case IM.splitLookup lStart opMap of
+      (befJump, fromJust->jumpTarg, aftJump)
+        | IM.null befJump -> -- loop starts here
+            let (loopEnd, loopCond) = IM.findMax lEnds
+            in  case IM.splitLookup loopEnd (IM.insert lStart jumpTarg aftJump) of
+                  (inWhile, fromJust-> _, aftWhile) ->
+                    IM.insert lStart (P1While loopCond (pass1 inWhile))
+                        $ pass1 aftWhile
+        | otherwise -> -- stuff before loop
+            IM.union (pass1 befJump) (pass1 (IM.insert lStart jumpTarg aftJump))
+  where
+    (jumps, noJumps) = flip IM.mapEither opMap $ \case
+        OBin bo r x -> Right (bo, r, x)
+        OJnz r j    -> Left (r, j)
+    (whiles, ifs) = flip IM.mapEither jumps $ \(r,j) ->
+                      bimap (r,) (r,) (splitNat j)
+    whileMap = IM.fromListWith IM.union
+             . map (\(i,(r, j)) -> (i - fromIntegral j, IM.singleton i r))
+             $ IM.toList whiles
 
--- toDay23 :: IM.IntMap Op -> Day23
--- toDay23 opMap = case minWhile of
---     Nothing       -> DDebug opMap
---     Just (i,src) -> case IM.splitLookup i opMap of
---       (befJump, Just jumpTarg, aftJump)
---         | IM.null befJump -> -- loop starts here
---             case lookupIMMax src of
---               Nothing -> error "huhh"
---               Just (bigLoopI, bigLoopC) ->
---                 case IM.splitLookup bigLoopI (IM.insert i jumpTarg aftJump) of
---                   (inWhile, Just _, aftWhile) ->
---                     DWhile bigLoopC (toDay23 inWhile)
---                       :+ toDay23 aftWhile
---         | otherwise -> -- stuff before loop
---             DDebug befJump :+ toDay23 (IM.insert i jumpTarg aftJump)
---   where
---     (jumps, noJumps) = flip IM.mapEither opMap $ \case
---         OBin bo r x -> Right (bo, r, x)
---         OJnz r j    -> Left (r, j)
---     (ifs, whiles) = IM.partition ((> 0) . snd) jumps
---     ifMap = IM.fromList
---           . map (\(i, (r, j)) -> (i, (r, i + j)))
---           $ IM.toList ifs
---     whileMap = IM.fromListWith IM.union
---              . map (\(i,(r, j)) -> (i + j, IM.singleton i r))
---              $ IM.toList whiles
---     minWhile = lookupIMMin whileMap
---     unIf :: IM.IntMap Op -> Day23
---     unIf = _
+splitNat :: Integral a => a -> Either Natural Natural
+splitNat n = case compare n 0 of
+    LT -> Left (fromIntegral (abs n))
+    EQ -> Right (fromIntegral n)
+    GT -> Right (fromIntegral n)
 
 lookupIMMin :: IM.IntMap a -> Maybe (Int, a)
 lookupIMMin m | IM.null m = Nothing
