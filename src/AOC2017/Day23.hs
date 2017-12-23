@@ -21,19 +21,16 @@ addr [c] | isAlpha c = Left c
 addr str = Right (read str)
 
 data BinOp = BOSet | BOSub | BOMul
-  deriving (Show, Eq)
 makePrisms ''BinOp
 runBO :: BinOp -> Int -> Int -> Int
 runBO = \case { BOSet -> const id; BOSub -> (-); BOMul -> (*) }
 
 data JumpCond = JCNotZero | JCPrime
-  deriving (Show, Eq)
 runJC :: JumpCond -> Int -> Bool
 runJC = \case { JCNotZero -> (/= 0); JCPrime -> isPrime . fromIntegral }
 
 data Op = OBin BinOp Char Addr
         | OJmp JumpCond Addr Int
-  deriving Show
 makePrisms ''Op
 
 parseOp :: String -> Op
@@ -60,7 +57,6 @@ optimize = set (_last . _OJmp . _3) (-7)
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
-  deriving (Show)
 makeClassy ''ProgState
 
 -- | Context in which Tape commands are run.  Writer parameter records
