@@ -10,9 +10,11 @@ import           Data.Tuple                (swap)
 type Comp = (Int, Int)
 
 -- | All possible ways of selecting a single item from a list
-select :: [a] -> [(a, [a])]
-select []     = []
-select (x:xs) = (x,xs) : [(y,x:ys) | (y,ys) <- select xs]
+select :: [a] -> [(a,[a])]
+select = go []
+  where
+   go xs [] = []
+   go xs (y:ys) = (y,xs++ys) : go (y:xs) ys
 
 bridge :: Int -> StateT [Comp] [] Int
 bridge frm = do
