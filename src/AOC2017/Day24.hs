@@ -4,8 +4,8 @@ import           AOC2017.Types             (Challenge)
 import           Control.Applicative       (Alternative(..))
 import           Control.Monad.Trans.State (StateT(..), evalStateT)
 import           Data.Bifunctor            (first)
-import           Data.Monoid
 import           Data.List.Split           (splitOn)
+import           Data.Ord                  (Down(..))
 import           Data.Tuple                (swap)
 
 type Comp = (Int, Int)
@@ -14,7 +14,7 @@ type Comp = (Int, Int)
 select :: [a] -> [(a,[a])]
 select = go []
   where
-   go xs [] = []
+   go _  [] = []
    go xs (y:ys) = (y,xs++ys) : go (y:xs) ys
 
 bridge :: Int -> StateT [Comp] [] Int
@@ -33,7 +33,7 @@ day24a = show . maximum
 
 day24b :: Challenge
 day24b = show . snd . maximum
-       . map (first (negate . length) . swap)
+       . map (first (Down . length) . swap)
        . runStateT (bridge 0) . parse
 
 parse :: String -> [Comp]
