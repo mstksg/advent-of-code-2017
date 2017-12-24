@@ -4,6 +4,7 @@ import           AOC2017.Types             (Challenge)
 import           Control.Applicative       (Alternative(..))
 import           Control.Monad.Trans.State (StateT(..), evalStateT)
 import           Data.Bifunctor            (first)
+import           Data.Monoid
 import           Data.List.Split           (splitOn)
 import           Data.Tuple                (swap)
 
