@@ -3,7 +3,7 @@ module AOC2017.Day23 (day23a, day23b, parse) where
 import           AOC2017.Types                    (Challenge)
 import           AOC2017.Util.Tape                (Tape(..), HasTape(..), unsafeTape, move)
 import           Control.Applicative              (many)
-import           Control.Lens                     (set, view, use, at, non, _last, forMOf_, Iso', iso)
+import           Control.Lens                     (set, use, at, non, _last, forMOf_, Iso', iso)
 import           Control.Lens.Operators           ((.=), (%=))
 import           Control.Lens.TH                  (makeClassy, makePrisms)
 import           Control.Lens.Tuple               (_1, _2, _3)
@@ -47,7 +47,7 @@ parse = map parseOp . lines
 
 -- | Replaces the two inner oops with a simple prime check
 optimize :: [Op] -> [Op]
-optimize = set (_last . _OJmp . _3) (-7)
+optimize = set (     _last . _OJmp . _3     ) (-7)
          . set (splot 8 . _2 . splot 17 . _1) [parseOp "jpm b 2"]
   where
     -- split by prefix and suffx
@@ -95,7 +95,7 @@ day23a = show . getSum . snd
        . parse
 
 day23b :: Challenge
-day23b = show . view (_1 . _2 . psRegs . at 'h' . non 0)
+day23b = show . M.findWithDefault 0 'h' . _psRegs . snd . fst
        . runTapeProg (many stepTape)
        . (`PS` M.singleton 'a' 1) . unsafeTape
        . optimize . parse
