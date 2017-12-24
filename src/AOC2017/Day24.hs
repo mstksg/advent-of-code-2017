@@ -33,8 +33,8 @@ day24a = show . maximum
 
 day24b :: Challenge
 day24b = show . snd . maximum
-       . map (first (Down . length) . swap)
-       . runStateT (bridge 0) . parse
+       . map (first (Down . length) . swap) -- sort by lowest leftovers
+       . runStateT (bridge 0) . parse       -- runState gives leftover components
 
 parse :: String -> [Comp]
 parse = map parseLine . lines
