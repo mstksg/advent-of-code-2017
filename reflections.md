@@ -1642,17 +1642,17 @@ Day 24
 ```
 >> Day 24a
 benchmarking...
-time                 7.310 s    (6.669 s .. 7.755 s)
-                     0.999 R²   (0.997 R² .. 1.000 R²)
-mean                 7.415 s    (7.274 s .. 7.516 s)
-std dev              152.4 ms   (0.0 s .. 174.7 ms)
+time                 1.681 s    (1.570 s .. 1.743 s)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 1.673 s    (1.653 s .. 1.686 s)
+std dev              19.25 ms   (0.0 s .. 22.18 ms)
 variance introduced by outliers: 19% (moderately inflated)
 
 >> Day 24b
 benchmarking...
-time                 7.673 s    (7.544 s .. 7.784 s)
-                     1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 7.610 s    (7.559 s .. 7.637 s)
-std dev              44.97 ms   (1.089 fs .. 46.42 ms)
+time                 1.795 s    (1.661 s .. NaN s)
+                     0.999 R²   (0.997 R² .. 1.000 R²)
+mean                 1.828 s    (1.794 s .. 1.850 s)
+std dev              33.11 ms   (0.0 s .. 38.19 ms)
 variance introduced by outliers: 19% (moderately inflated)
 ```
