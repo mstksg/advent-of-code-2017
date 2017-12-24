@@ -45,7 +45,7 @@ parseOp inp = case words inp of
 parse :: String -> [Op]
 parse = map parseOp . lines
 
--- | Replaces the two inner oops with a simple prime check
+-- | Replaces the two inner loops with a simple prime check
 optimize :: [Op] -> [Op]
 optimize = set (     _last . _OJmp . _3     ) (-7)
          . set (splot 8 . _2 . splot 17 . _1) [parseOp "jpm b 2"]
