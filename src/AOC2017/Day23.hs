@@ -1,4 +1,4 @@
-module AOC2017.Day23 (day23a, day23b, parse) where
+module AOC2017.Day23 (day23a, day23b) where
 
 import           AOC2017.Types                    (Challenge)
 import           AOC2017.Util.Tape                (Tape(..), HasTape(..), unsafeTape, move)

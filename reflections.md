@@ -1341,3 +1341,292 @@ get to a given depth -- a contribution from waiting to start, and a
 contribution from the time it will take to actually reach that depth once we
 start.
 
+### Day 13 Benchmarks
+
+```
+>> Day 13a
+benchmarking...
+time                 211.9 μs   (202.1 μs .. 222.9 μs)
+                     0.976 R²   (0.959 R² .. 0.992 R²)
+mean                 211.3 μs   (204.7 μs .. 222.9 μs)
+std dev              29.80 μs   (19.13 μs .. 47.19 μs)
+variance introduced by outliers: 89% (severely inflated)
+
+>> Day 13b
+benchmarking...
+time                 192.1 ms   (188.2 ms .. 197.3 ms)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 197.0 ms   (195.0 ms .. 199.7 ms)
+std dev              3.138 ms   (1.944 ms .. 4.778 ms)
+variance introduced by outliers: 14% (moderately inflated)
+```
+
+Day 14
+------
+
+*([code][d14c])*
+
+[d14c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day14.hs
+
+### Day 14 Benchmarks
+
+```
+>> Day 14a
+benchmarking...
+time                 1.085 s    (946.8 ms .. 1.171 s)
+                     0.998 R²   (0.996 R² .. 1.000 R²)
+mean                 1.105 s    (1.077 s .. 1.119 s)
+std dev              24.32 ms   (0.0 s .. 25.04 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+>> Day 14b
+benchmarking...
+time                 1.358 s    (1.290 s .. 1.450 s)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 1.321 s    (1.306 s .. 1.333 s)
+std dev              18.95 ms   (0.0 s .. 20.79 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 15
+------
+
+*([code][d15c])*
+
+[d15c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day15.hs
+
+### Day 15 Benchmarks
+
+```
+>> Day 15a
+benchmarking...
+time                 2.443 s    (2.409 s .. 2.506 s)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 2.413 s    (2.404 s .. 2.422 s)
+std dev              15.09 ms   (0.0 s .. 15.61 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+>> Day 15b
+benchmarking...
+time                 952.2 ms   (839.4 ms .. 1.054 s)
+                     0.998 R²   (0.996 R² .. 1.000 R²)
+mean                 967.0 ms   (944.7 ms .. 984.5 ms)
+std dev              27.27 ms   (0.0 s .. 30.41 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 16
+------
+
+*([code][d16c])*
+
+[d16c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day16.hs
+
+### Day 16 Benchmarks
+
+```
+>> Day 16a
+benchmarking...
+time                 108.7 ms   (103.4 ms .. 113.0 ms)
+                     0.993 R²   (0.969 R² .. 1.000 R²)
+mean                 106.8 ms   (104.3 ms .. 111.9 ms)
+std dev              5.427 ms   (2.202 ms .. 8.277 ms)
+variance introduced by outliers: 10% (moderately inflated)
+
+>> Day 16b
+benchmarking...
+time                 106.4 ms   (90.12 ms .. 117.4 ms)
+                     0.982 R²   (0.961 R² .. 0.999 R²)
+mean                 116.3 ms   (109.2 ms .. 136.4 ms)
+std dev              17.04 ms   (3.190 ms .. 25.59 ms)
+variance introduced by outliers: 48% (moderately inflated)
+```
+
+Day 17
+------
+
+*([code][d17c])*
+
+[d17c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day17.hs
+
+### Day 17 Benchmarks
+
+```
+>> Day 17a
+benchmarking...
+time                 18.38 ms   (15.25 ms .. 21.37 ms)
+                     0.910 R²   (0.855 R² .. 0.972 R²)
+mean                 23.24 ms   (20.33 ms .. 33.50 ms)
+std dev              11.62 ms   (2.391 ms .. 21.67 ms)
+variance introduced by outliers: 95% (severely inflated)
+
+>> Day 17b
+benchmarking...
+time                 747.6 ms   (694.3 ms .. 881.0 ms)
+                     0.996 R²   (0.986 R² .. 1.000 R²)
+mean                 771.3 ms   (749.1 ms .. 809.6 ms)
+std dev              33.29 ms   (0.0 s .. 34.91 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 18
+------
+
+*([code][d18c])*
+
+[d18c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day18.hs
+
+### Day 18 Benchmarks
+
+```
+>> Day 18a
+benchmarking...
+time                 450.8 μs   (393.3 μs .. 540.9 μs)
+                     0.898 R²   (0.849 R² .. 0.992 R²)
+mean                 426.0 μs   (403.0 μs .. 476.6 μs)
+std dev              102.4 μs   (39.56 μs .. 179.0 μs)
+variance introduced by outliers: 95% (severely inflated)
+
+>> Day 18b
+benchmarking...
+time                 232.5 ms   (208.6 ms .. 252.2 ms)
+                     0.991 R²   (0.962 R² .. 1.000 R²)
+mean                 232.9 ms   (224.5 ms .. 240.3 ms)
+std dev              10.83 ms   (7.343 ms .. 13.68 ms)
+variance introduced by outliers: 14% (moderately inflated)
+```
+
+Day 19
+------
+
+*([code][d19c])*
+
+[d19c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day19.hs
+
+### Day 19 Benchmarks
+
+```
+>> Day 18a
+benchmarking...
+time                 450.8 μs   (393.3 μs .. 540.9 μs)
+                     0.898 R²   (0.849 R² .. 0.992 R²)
+mean                 426.0 μs   (403.0 μs .. 476.6 μs)
+std dev              102.4 μs   (39.56 μs .. 179.0 μs)
+variance introduced by outliers: 95% (severely inflated)
+
+>> Day 18b
+benchmarking...
+time                 232.5 ms   (208.6 ms .. 252.2 ms)
+                     0.991 R²   (0.962 R² .. 1.000 R²)
+mean                 232.9 ms   (224.5 ms .. 240.3 ms)
+std dev              10.83 ms   (7.343 ms .. 13.68 ms)
+variance introduced by outliers: 14% (moderately inflated)]
+```
+
+Day 20
+------
+
+*([code][d20c])*
+
+[d20c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day20.hs
+
+### Day 20 Benchmarks
+
+```
+>> Day 20a
+benchmarking...
+time                 33.64 ms   (30.59 ms .. 37.78 ms)
+                     0.957 R²   (0.920 R² .. 0.998 R²)
+mean                 33.70 ms   (32.37 ms .. 36.27 ms)
+std dev              3.692 ms   (1.222 ms .. 5.172 ms)
+variance introduced by outliers: 42% (moderately inflated)
+
+>> Day 20b
+benchmarking...
+time                 74.06 ms   (68.03 ms .. 84.42 ms)
+                     0.964 R²   (0.879 R² .. 0.997 R²)
+mean                 76.05 ms   (72.32 ms .. 83.21 ms)
+std dev              7.736 ms   (4.126 ms .. 11.56 ms)
+variance introduced by outliers: 29% (moderately inflated)
+```
+
+Day 21
+------
+
+*([code][d21c])*
+
+[d21c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day21.hs
+
+### Day 21 Benchmarks
+
+```
+>> Day 21a
+benchmarking...
+time                 2.169 ms   (2.056 ms .. 2.335 ms)
+                     0.911 R²   (0.796 R² .. 0.996 R²)
+mean                 2.235 ms   (2.138 ms .. 2.621 ms)
+std dev              477.3 μs   (184.0 μs .. 1.054 ms)
+variance introduced by outliers: 90% (severely inflated)
+
+>> Day 21b
+benchmarking...
+time                 3.833 s    (3.540 s .. 4.438 s)
+                     0.997 R²   (0.994 R² .. 1.000 R²)
+mean                 3.764 s    (3.678 s .. 3.868 s)
+std dev              96.29 ms   (0.0 s .. 109.8 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 22
+------
+
+*([code][d22c])*
+
+[d22c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day22.hs
+
+### Day 22 Benchmarks
+
+```
+>> Day 22a
+benchmarking...
+time                 6.036 ms   (5.771 ms .. 6.360 ms)
+                     0.975 R²   (0.951 R² .. 0.991 R²)
+mean                 6.102 ms   (5.916 ms .. 6.364 ms)
+std dev              704.9 μs   (467.2 μs .. 1.074 ms)
+variance introduced by outliers: 67% (severely inflated)
+
+>> Day 22b
+benchmarking...
+time                 7.825 s    (7.623 s .. 8.054 s)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 7.786 s    (7.750 s .. 7.815 s)
+std dev              47.35 ms   (0.0 s .. 51.70 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
+
+Day 23
+------
+
+*([code][d23c])*
+
+[d23c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day23.hs
+
+### Day 23 Benchmarks
+
+```
+>> Day 23a
+benchmarking...
+time                 87.32 ms   (81.75 ms .. 92.92 ms)
+                     0.991 R²   (0.974 R² .. 0.998 R²)
+mean                 86.94 ms   (84.60 ms .. 90.52 ms)
+std dev              4.436 ms   (3.076 ms .. 6.214 ms)
+
+>> Day 23b
+benchmarking...
+time                 5.983 ms   (5.436 ms .. 6.836 ms)
+                     0.897 R²   (0.814 R² .. 0.990 R²)
+mean                 5.757 ms   (5.527 ms .. 6.383 ms)
+std dev              976.3 μs   (413.1 μs .. 1.700 ms)
+variance introduced by outliers: 81% (severely inflated)
+```
+
