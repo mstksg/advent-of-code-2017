@@ -23,17 +23,17 @@ processes and how my solutions all work.  Benchmarks also included.
 *   **[Day 10 Reflections][d10r]** *([code][d10c])* *([benchmarks][d10b])* *([stream][d10s])*
 *   **[Day 11 Reflections][d11r]** *([code][d11c])* *([benchmarks][d11b])*
 *   **[Day 12 Reflections][d12r]** *([code][d12c])* *([benchmarks][d12b])*
-*   **[Day 13 Reflections][d12r]** *([code][d13c])* *([benchmarks][d12b])*
-*   **Day 14 Reflections** *([code][d14c])* *([benchmarks][d12b])*
-*   **Day 15 Reflections** *([code][d15c])* *([benchmarks][d12b])*
-*   **Day 16 Reflections** *([code][d16c])* *([benchmarks][d12b])*
-*   **Day 17 Reflections** *([code][d17c])* *([benchmarks][d12b])*
-*   **Day 18 Reflections** *([code][d18c])* *([benchmarks][d12b])*
-*   **Day 19 Reflections** *([code][d19c])* *([benchmarks][d12b])*
-*   **Day 20 Reflections** *([code][d20c])* *([benchmarks][d12b])*
-*   **Day 21 Reflections** *([code][d21c])* *([benchmarks][d12b])*
-*   **Day 22 Reflections** *([code][d22c])* *([benchmarks][d12b])*
-*   **Day 23 Reflections** *([code][d23c])* *([benchmarks][d12b])*
+*   **[Day 13 Reflections][d12r]** *([code][d13c])* *([benchmarks][d13b])*
+*   **Day 14 Reflections** *([code][d14c])* *([benchmarks][d14b])*
+*   **Day 15 Reflections** *([code][d15c])* *([benchmarks][d15b])*
+*   **Day 16 Reflections** *([code][d16c])* *([benchmarks][d16b])*
+*   **Day 17 Reflections** *([code][d17c])* *([benchmarks][d17b])*
+*   **Day 18 Reflections** *([code][d18c])* *([benchmarks][d18b])*
+*   **Day 19 Reflections** *([code][d19c])* *([benchmarks][d19b])*
+*   **Day 20 Reflections** *([code][d20c])* *([benchmarks][d20b])*
+*   **Day 21 Reflections** *([code][d21c])* *([benchmarks][d21b])*
+*   **Day 22 Reflections** *([code][d22c])* *([benchmarks][d22b])*
+*   **Day 23 Reflections** *([code][d23c])* *([benchmarks][d23b])*
 
 [d1r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-1
 [d2r]: https://github.com/mstksg/advent-of-code-2017/blob/master/reflections.md#day-2
