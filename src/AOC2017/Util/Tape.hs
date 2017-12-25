@@ -12,6 +12,7 @@ module AOC2017.Util.Tape (
   , move
   , moveLeftC, moveRightC
   , moveC
+  , moveRightD, moveLeftD
   ) where
 
 import           AOC2017.Util
@@ -90,3 +91,13 @@ moveC n = case compare n 0 of
     LT -> (!!! abs n) . iterate moveLeftC
     EQ -> id
     GT -> (!!! n    ) . iterate moveRightC
+
+moveLeftD :: a -> Tape a -> Tape a
+moveLeftD d (Tape ls x rs) = case ls of
+    []    -> Tape [] d (x:rs)
+    l:ls' -> Tape ls' l (x:rs)
+
+moveRightD :: a -> Tape a -> Tape a
+moveRightD d (Tape ls x rs) = case rs of
+    []    -> Tape (x:ls) d []
+    r:rs' -> Tape (x:ls) r rs'
