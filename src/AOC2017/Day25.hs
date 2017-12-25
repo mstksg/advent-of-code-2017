@@ -1,19 +1,9 @@
 module AOC2017.Day25 (day25a, day25b) where
 
-import           AOC2017.Types              (Challenge)
+import           AOC2017.Types (Challenge)
 import           AOC2017.Util
-import           AOC2017.Util.Tape
 import           Control.Lens
-import           Control.Monad.Trans.Maybe
-import           Control.Monad.Trans.State
-import           Control.Monad.Trans.Writer
-import           Data.Foldable
-import qualified Data.IntMap                as IM
-import qualified Data.IntSet                as IS
-import qualified Data.Map                   as M
-import qualified Data.Set                   as S
-import qualified Text.Megaparsec            as P
-import qualified Text.Megaparsec.Char       as P
+import qualified Data.IntSet   as IS
 
 data St = SA | SB | SC | SD | SE | SF
 
@@ -21,8 +11,7 @@ data Dir = DL | DR
 
 type Rule = (Bool, Dir, St)
 
-type TapeState = (Tape Bool, St)
-
+type TapeState = (Int, IS.IntSet, St)
 
 rule :: St -> (Rule, Rule)
 rule = \case
@@ -34,19 +23,21 @@ rule = \case
     SF -> ((True, DR, SA), (False, DL, SE))
 
 step :: TapeState -> TapeState
-step (!t0, !st0) = (t1, st1)
+step (!i0, !t0, !st0) = (i1, t1, st1)
   where
-    t1 = t0 & tFocus .~ newFoc
-            & case dirTurn of
-                DL -> moveLeftD False
-                DR -> moveRightD False
+    i1 = case dirTurn of
+           DL -> i0 - 1
+           DR -> i0 + 1
+    t1 = t0 & if newFoc
+                then IS.insert i0
+                else IS.delete i0
     (newFoc, dirTurn, st1)
-      | t0 ^. tFocus = snd (rule st0)
-      | otherwise    = fst (rule st0)
+      | i0 `IS.member` t0 = snd (rule st0)
+      | otherwise        = fst (rule st0)
 
 day25a :: Challenge
-day25a _ = show . length . filter id . toList . fst
-         $ iterate step (Tape [] False [], SA ) !!! 12964419
+day25a _ = show . IS.size . view _2
+         $ iterate step (0, IS.empty, SA) !!! 12964419
 
 day25b :: Challenge
-day25b = undefined
+day25b _ = "Merry Christmas!"
