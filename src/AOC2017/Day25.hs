@@ -1,43 +1,41 @@
-module AOC2017.Day25 (day25a, day25b) where
+module AOC2017.Day25 (day25a) where
 
-import           AOC2017.Types (Challenge)
-import           AOC2017.Util
-import           Control.Lens
-import qualified Data.IntSet   as IS
+import           AOC2017.Types       (Challenge)
+import           AOC2017.Util        ((!!!))
+import           Control.Lens hiding ((<>~))
+import           Data.Coerce
+import           Data.Semigroup
+import qualified Data.IntSet         as IS
+import qualified Data.Map            as M
 
-data St = SA | SB | SC | SD | SE | SF
+type St      = Last Char
+type Step    = (Sum Int, St)
+type RuleMap = M.Map St ((Step, Bool), (Step, Bool))
 
-data Dir = DL | DR
+runRule :: RuleMap -> St -> Bool -> (Step, Bool)
+runRule rm st = \case
+    False -> fst $ rm M.! st
+    True  -> snd $ rm M.! st
 
-type Rule = (Bool, Dir, St)
-
-type TapeState = (Int, IS.IntSet, St)
-
-rule :: St -> (Rule, Rule)
-rule = \case
-    SA -> ((True, DR, SB), (False, DR, SF))
-    SB -> ((False,DL, SB), (True, DL, SC))
-    SC -> ((True,DL,SD),(False, DR, SC))
-    SD -> ((True, DL, SE),(True, DR, SA))
-    SE -> ((True, DL, SF), (False, DL, SD))
-    SF -> ((True, DR, SA), (False, DL, SE))
-
-step :: TapeState -> TapeState
-step (!i0, !t0, !st0) = (i1, t1, st1)
-  where
-    i1 = case dirTurn of
-           DL -> i0 - 1
-           DR -> i0 + 1
-    t1 = t0 & if newFoc
-                then IS.insert i0
-                else IS.delete i0
-    (newFoc, dirTurn, st1)
-      | i0 `IS.member` t0 = snd (rule st0)
-      | otherwise        = fst (rule st0)
+step :: RuleMap -> (Step, IS.IntSet) -> (Step, IS.IntSet)
+step rm (s0@(Sum i,st),t) = t & contains i %%~ runRule rm st
+                              & _1          %~ (s0 <>)
 
 day25a :: Challenge
-day25a _ = show . IS.size . view _2
-         $ iterate step (0, IS.empty, SA) !!! 12964419
+day25a _ = show . IS.size . snd
+         . (!!! 12964419)
+         . iterate (step ruleMap)
+         $ ((0, Last 'a'), mempty)
 
-day25b :: Challenge
-day25b _ = "Merry Christmas!"
+ruleMap :: RuleMap
+ruleMap = M.fromList (coerce ruleList)
+  where
+    ruleList :: [(Char, (((Int, Char), Bool), ((Int, Char), Bool)))]
+    ruleList = [ ('a', ((( 1, 'b'), True ), (( 1, 'f'), False)))
+               , ('b', (((-1, 'b'), False), ((-1, 'c'), True )))
+               , ('c', (((-1, 'd'), True ), (( 1, 'c'), False)))
+               , ('d', (((-1, 'e'), True ), (( 1, 'a'), True )))
+               , ('e', (((-1, 'f'), True ), ((-1, 'd'), False)))
+               , ('f', ((( 1, 'a'), True ), ((-1, 'e'), False)))
+               ]
+

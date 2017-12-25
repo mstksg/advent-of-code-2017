@@ -46,6 +46,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Data.Foldable
 import           Data.List
+import           Data.Monoid
 import           GHC.Generics               (Generic)
 import           Network.Curl
 import           System.FilePath
@@ -59,36 +60,37 @@ import qualified Data.Yaml                  as Y
 
 challengeMap :: IM.IntMap (M.Map Char Challenge)
 challengeMap = IM.fromList
-    [ (d, M.fromList [('a', ca),('b', cb)])
-    | (d, (ca, cb)) <- challenges
+    [ (d, M.fromList (zip ['a'..] ps))
+    | (d, ps) <- challenges
     ]
+   <> IM.singleton 25 (M.singleton 'a' day25a)
 
-challenges :: [(Int, (Challenge, Challenge))]
-challenges = [ ( 1, (day01a, day01b))
-             , ( 2, (day02a, day02b))
-             , ( 3, (day03a, day03b))
-             , ( 4, (day04a, day04b))
-             , ( 5, (day05a, day05b))
-             , ( 6, (day06a, day06b))
-             , ( 7, (day07a, day07b))
-             , ( 8, (day08a, day08b))
-             , ( 9, (day09a, day09b))
-             , (10, (day10a, day10b))
-             , (11, (day11a, day11b))
-             , (12, (day12a, day12b))
-             , (13, (day13a, day13b))
-             , (14, (day14a, day14b))
-             , (15, (day15a, day15b))
-             , (16, (day16a, day16b))
-             , (17, (day17a, day17b))
-             , (18, (day18a, day18b))
-             , (19, (day19a, day19b))
-             , (20, (day20a, day20b))
-             , (21, (day21a, day21b))
-             , (22, (day22a, day22b))
-             , (23, (day23a, day23b))
-             , (24, (day24a, day24b))
-             , (25, (day25a, day25b))
+challenges :: [(Int, [Challenge])]
+challenges = [ ( 1, [day01a, day01b])
+             , ( 2, [day02a, day02b])
+             , ( 3, [day03a, day03b])
+             , ( 4, [day04a, day04b])
+             , ( 5, [day05a, day05b])
+             , ( 6, [day06a, day06b])
+             , ( 7, [day07a, day07b])
+             , ( 8, [day08a, day08b])
+             , ( 9, [day09a, day09b])
+             , (10, [day10a, day10b])
+             , (11, [day11a, day11b])
+             , (12, [day12a, day12b])
+             , (13, [day13a, day13b])
+             , (14, [day14a, day14b])
+             , (15, [day15a, day15b])
+             , (16, [day16a, day16b])
+             , (17, [day17a, day17b])
+             , (18, [day18a, day18b])
+             , (19, [day19a, day19b])
+             , (20, [day20a, day20b])
+             , (21, [day21a, day21b])
+             , (22, [day22a, day22b])
+             , (23, [day23a, day23b])
+             , (24, [day24a, day24b])
+             , (25, [day25a        ])
              ]
 
 data ChallengePaths = CP { _cpDataUrl :: !FilePath
