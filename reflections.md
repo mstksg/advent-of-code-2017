@@ -1656,3 +1656,22 @@ mean                 1.828 s    (1.794 s .. 1.850 s)
 std dev              33.11 ms   (0.0 s .. 38.19 ms)
 variance introduced by outliers: 19% (moderately inflated)
 ```
+
+Day 25
+------
+
+*([code][d25c])*
+
+[d25c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day25.hs
+
+### Day 25 Benchmarks
+
+```
+>> Day 25a
+benchmarking...
+time                 2.648 s    (2.510 s .. 2.834 s)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 2.643 s    (2.607 s .. 2.668 s)
+std dev              38.04 ms   (0.0 s .. 43.77 ms)
+variance introduced by outliers: 19% (moderately inflated)
+```
