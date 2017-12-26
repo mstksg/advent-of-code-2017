@@ -1462,6 +1462,66 @@ Day 15
 
 [d15c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day15.hs
 
+This one is a really "easy" one from a Haskell perspective.  We can just
+generate the outputs of each stream as an infinite lazily linked list, take the
+number of items we need, and count the pairs that match a specific predicate.
+
+In particular, the predicate we care about is whether or not two items have the
+same final 16 bits.  This is the same as checking if two integers have value
+when converted to `Word16`'s (16-bit words).
+
+The generating function, given a "factor" and a "seed", is:
+
+```haskell
+generate :: Int -> Int -> Int
+generate fac = (`mod` 2147483647) . (* fac)
+```
+
+We can then just generate them infinitely (using `iterate` and an initial
+seed), zip the two streams together, take the first 40000000 items, filter for
+the ones where the two items match, and count the length of the resulting list.
+
+```haskell
+match :: Int -> Int -> Bool
+match = (==) @Word16 `on` fromIntegral
+
+day15a :: Int -> Int -> Int
+day15a seedA seedB = length
+                   . filter (uncurry match)
+                   . take 4e7
+                   $ zip (iterate (generate 16807) seedA)
+                         (iterate (generate 48271) seedB)
+```
+
+Part 2 is pretty much the same thing, except we filter for things that are
+divisible by 4 in the first list, and things that are divisible by 8 in the
+second list.  To gain the "asynchronous" behavior that the problem is asking
+for, we have to do this on the lists before they are zipped.  That way, all
+`zip` ever sees (and pairs) are the pre-filtered lists.
+
+```haskell
+divBy :: Int -> Int -> Bool
+x `divBy` b = x `mod` b == 0
+
+day15b :: Int -> Int -> Int
+day15b seedA seedB = length
+                   . filter (uncurry match)
+                   . take 5e6
+                   $ zip (filter (`divBy` 4) . iterate (generate 16807) $ seedA)
+                         (filter (`divBy` 8) . iterate (generate 48271) $ seedB)
+```
+
+All in all a very nice "functional" problem with a functional solution :)
+
+Parsing is basically finding the seeds as the only numeric values on each line:
+
+```
+parse :: String -> (Int, Int)
+parse inp = (a, b)
+  where
+    a:b:_ = read . filter isDigit <$> lines inp
+```
+
 ### Day 15 Benchmarks
 
 ```

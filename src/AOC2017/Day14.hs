@@ -4,8 +4,6 @@ import           AOC2017.Day10          (knothash)
 import           AOC2017.Types          (Challenge)
 import           AOC2017.Util           (strip)
 import           AOC2017.Util.Disjoints (Disjoints(..), disjoint)
-import           Control.Monad          (replicateM)
-import           Data.Char              (digitToInt)
 import           Data.Ix                (index, range)
 import           Text.Printf            (printf)
 import qualified Data.IntSet            as IS

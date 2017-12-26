@@ -23,9 +23,9 @@ processes and how my solutions all work.  Benchmarks also included.
 *   **[Day 10 Reflections][d10r]** *([code][d10c])* *([benchmarks][d10b])* *([stream][d10s])*
 *   **[Day 11 Reflections][d11r]** *([code][d11c])* *([benchmarks][d11b])*
 *   **[Day 12 Reflections][d12r]** *([code][d12c])* *([benchmarks][d12b])*
-*   **[Day 13 Reflections][d12r]** *([code][d13c])* *([benchmarks][d13b])*
-*   **Day 14 Reflections** *([code][d14c])* *([benchmarks][d14b])*
-*   **Day 15 Reflections** *([code][d15c])* *([benchmarks][d15b])*
+*   **[Day 13 Reflections][d13r]** *([code][d13c])* *([benchmarks][d13b])*
+*   **[Day 14 Reflections][d14r]** *([code][d14c])* *([benchmarks][d14b])*
+*   **[Day 15 Reflections][d15r]** *([code][d15c])* *([benchmarks][d15b])*
 *   **Day 16 Reflections** *([code][d16c])* *([benchmarks][d16b])*
 *   **Day 17 Reflections** *([code][d17c])* *([benchmarks][d17b])*
 *   **Day 18 Reflections** *([code][d18c])* *([benchmarks][d18b])*
