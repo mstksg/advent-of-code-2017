@@ -1,9 +1,9 @@
 module AOC2017.Day13 (day13a, day13b) where
 
-import           AOC2017.Types     (Challenge)
-import           Data.Char
-import           Data.Foldable
-import           Data.Maybe
+import           AOC2017.Types (Challenge)
+import           Data.Char     (isDigit)
+import           Data.Foldable (find)
+import           Data.Maybe    (fromJust)
 
 
 caughtAt
