@@ -41,4 +41,3 @@ parse = map parseLine . lines
   where
     parseLine (splitOn "/"->(x:y:_)) = (read x, read y)
     parseLine _ = error "No parse"
-

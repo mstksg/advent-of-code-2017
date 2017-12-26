@@ -23,6 +23,7 @@ library
                        AOC2017.Types
                        AOC2017.Util
                        AOC2017.Util.Tape
+                       AOC2017.Util.Disjoints
   other-modules:       AOC2017.Day01
                        AOC2017.Day02
                        AOC2017.Day03
