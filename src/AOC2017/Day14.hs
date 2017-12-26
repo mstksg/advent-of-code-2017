@@ -22,7 +22,10 @@ day14a :: Challenge
 day14a = show . length . filter id . concat . mkGrid
 
 day14b :: Challenge
-day14b (mkGrid->grid) = show . S.size . getD $ foldMap go (range r)
+day14b = show . S.size . getD . litGroups . mkGrid
+
+litGroups :: [[Bool]] -> Disjoints
+litGroups grid = foldMap go (range r)
   where
     r = ((0,0),(127,127))
     isLit (x,y) = grid !! y !! x

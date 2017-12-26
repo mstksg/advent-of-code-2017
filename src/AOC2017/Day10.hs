@@ -35,9 +35,7 @@ day10a = show . V.product . V.take 2
        . map read . splitOn ","
 
 day10b :: Challenge
-day10b = toHex . knothash . strip
-  where
-    toHex = concatMap (printf "%02x")
+day10b = concatMap (printf "%02x") . knothash . strip
 
 knothash :: String -> [Word8]
 knothash = map (foldr xor 0) . chunksOf 16 . V.toList . process

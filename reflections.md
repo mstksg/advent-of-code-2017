@@ -1072,33 +1072,37 @@ We can parse our input using `map read . splitOn "," :: String -> [Int]`,
 Part 2 is pretty straightforward in that the *logic* is extremely simple, just
 do a series of transformations.
 
+First we can make the "knot hash" itself:
 
 ```haskell
-day10b :: [Word8] -> String
-day10b = toHex . process
-       . concat . replicate 64 . (++ salt)
+knothash :: String -> [Word8]
+knothash = map (foldr xor 0) . chunksOf 16 . V.toList . process
+         . concat . replicate 64 . (++ salt)
+         . map (fromIntegral . ord)
   where
     salt  = [17, 31, 73, 47, 23]
-    toHex = concatMap (printf "%02x" . foldr xor 0) . chunksOf 16 . toList
-    strip = T.unpack . T.strip . T.pack
 ```
 
 We:
 
-3.  Append the salt bytes at the end
-4.  `concat . replicate 64 :: [a] -> [a]`, replicate the list of inputs 64 times
-5.  `process` things like how we did in Part 1
-7.  Convert to hex:
-    *   Break into chunks of 16 (using `chunksOf` from the *[split][]* library)
-    *   `foldr` each chunk of 16 using `xor`
-    *   Convert the resulting `Int` to a hex string, using `printf %02x`
-    *   Aggregate all of the chunk results later
+1.  Append the salt bytes at the end
+2.  `concat . replicate 64 :: [a] -> [a]`, replicate the list of inputs 64 times
+3.  `process` things like how we did in Part 1
+4.  Break into chunks of 16 (using `chunksOf` from the *[split][]* library)
+5.  `foldr` each chunk of 16 using `xor`
 
-Again, it's not super complicated, it's just that there are so many steps
+And our actual `day10b` is then just applying this and printing this as hex:
+
+```haskell
+day10b :: [Word8] -> String
+day10b = concatMap (printf "%02x") . knothash
+```
+
+We leverage the `printf` formatter from `Text.Printf` to generate the hex,
+being careful to ensure we pad the result.
+
+Not super complicated, it's just that there are so many steps
 described in the puzzle!
-
-We can parse our input using `map (fromIntegral . ord) :: String -> [Word8]`,
-taking care to also strip any leading and trailing whitespace first.
 
 ### Day 10 Benchmarks
 
@@ -1225,7 +1229,6 @@ instance Monoid Disjoints where
             overlaps  = S.filter (not . IS.null . (`IS.intersection` z)) zs
             disjoints = zs `S.difference` overlaps
             newGroup  = IS.unions $ z : S.toList overlaps
-
 ```
 
 The mappend action is union, but preserving disjoint connection property.  If
@@ -1368,7 +1371,69 @@ Day 14
 
 [d14c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day14.hs
 
+Part 1 is a simple application of the "knot hash" function we wrote:
+different inputs.  We can make a row of a grid by running `knothash :: String
+-> [Word8]` on the seed, using `printf` to format things as a binary string,
+and then using `map (== '1')` to convert our binary string into a list of
+`Bool`s.  These represent a list of "on" or "off" cells.
 
+```haskell
+mkRow :: String -> Int -> [Bool]
+mkRow seed n = map (== '1') . concatMap (printf "%08b") . knothash
+             $ seed ++ "-" ++ show n
+```
+
+Our grid is then just running this function for every row, to get a grid of
+on/off cells:
+
+```haskell
+mkGrid :: String -> [[Bool]]
+mkGrid seed = map (mkRow seed) [0..127]
+```
+
+The actual challenge is then just counting all of the `True`s:
+
+```haskell
+day14a :: String -> Int
+day14a = length . filter id . concat . mkGrid
+```
+
+For Part 2, we can actually re-use the same `Disjoints` monoid that we used for
+Day 12.  We'll just add in sets of neighboring lit points, and count how many
+disjoint sets come out at the end.
+
+We're going to leverage `Data.Ix`, to let us enumerate over all cells in a grid
+with `range :: ((Int, Int), (Int, Int)) -> [(Int, Int)]`.  `Data.Ix` also gives
+us `index :: (Int, Int) -> Int`, which allows us to "encode" a coordinate as an
+`Int`, so we can use it with the `IntSet` that we wrote earlier.
+
+```haskell
+litGroups :: [[Bool]] -> Disjoints
+litGroups grid = foldMap go (range r)
+  where
+    r = ((0,0),(127,127))
+    isLit (x,y) = grid !! y !! x
+    go p | isLit p   = D . S.singleton . IS.fromList
+                     . map (index r) . (p:) . filter isLit
+                     $ neighbors p
+         | otherwise = mempty
+
+neighbors :: (Int, Int) -> [(Int, Int)]
+neighbors (x,y) = [ (x+dx, y+dy) | (dx, dy) <- [(0,1),(0,-1),(1,0),(-1,0)]
+                                 , x+dx >= 0
+                                 , y+dy >= 0
+                                 , x+dx < 128
+                                 , y+dy < 128
+                  ]
+```
+
+So part 2 is just running `litGroups` and counting the resulting number of
+disjoint groups:
+
+```haskell
+day14b :: String -> Int
+day14b = S.size . getD . litGroups . mkGrid
+```
 
 ### Day 14 Benchmarks
 
