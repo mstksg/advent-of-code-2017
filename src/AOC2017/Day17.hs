@@ -7,7 +7,7 @@ import           Data.List         (elemIndices, foldl')
 unshift :: a -> Tape a -> Tape a
 unshift y (Tape ls x rs) = Tape (x:ls) y rs
 
-step :: Int -> Tape Int -> Int -> Tape Int
+step :: Int -> Tape a -> a -> Tape a
 step n t0 x = unshift x . moveC n $ t0
 
 day17a :: Challenge

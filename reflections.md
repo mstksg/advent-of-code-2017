@@ -1699,6 +1699,69 @@ Day 17
 
 [d17c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day17.hs
 
+For Day 17 I used `Tape` again -- for the O(1) insertions.  (Even though moving
+around is amortized O(n)).
+
+```haskell
+data Tape a = Tape { _tLefts  :: [a]
+                   , _tFocus  :: a
+                   , _tRights :: [a]
+                   }
+  deriving Show
+
+unshift :: a -> Tape a -> Tape a
+unshift y (Tape ls x rs) = Tape (x:ls) y rs
+
+moveRight :: Tape a -> Tape a
+moveRight (Tape ls x rs) = case rs of
+    []    -> let l :| ls' = NE.reverse (x :| ls)
+             in  Tape [] l ls'
+    r:rs' -> Tape (x:ls) r rs'
+```
+
+The only difference between this motion and the previous motion is the periodic
+boundary conditions of tape motion.  Before, if we went past the edge of the
+tape, we'd return `Nothing`.  Here, however, we want to "cycle" around, so we
+reverse the left-hand list and move our focus to the last item in the list.
+
+With that in mind, we can write our stepping function:
+
+```haskell
+step :: Int -> Tape a -> a -> Tape a
+step n t0 x = unshift x . moveC n $ t0
+```
+
+We expect the number of steps to take, the initial tape, and the item to add.
+This will cycle the tape the given number of steps and then insert the desired
+item.
+
+Part 1 is then just applying this as a `foldl`:
+
+```haskell
+day17a :: Int -> Int
+day17a n = head . _tRights
+         $ foldl' (step n) (Tape [] 0 []) [1 .. 2017]
+````
+
+Part 2 can't really be done by iterating this process 50 million times.  One
+thing we can leverage is the fact that since 0 is there from the beginning (at
+position 0), we only need to keep track of all the items that are ever inserted
+at position 1:
+
+```haskell
+day17b :: Int -> Int
+day17b n = last
+         . elemIndices @Int 1
+         $ scanl jump 0 [1 .. 5e7]
+  where
+    jump i x = ((i + n) `mod` x) + 1
+```
+
+At each step, we "jump" the `n` steps from the current position, being sure to
+`mod` by the current size of the tape.  `scanl` then gives us the position of
+the cursor for all points in our process.  We then find all of the positions
+where the function jumps to `1` using `elemIndices`, and find the last one.
+
 ### Day 17 Benchmarks
 
 ```
