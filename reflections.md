@@ -1405,7 +1405,9 @@ disjoint sets come out at the end.
 We're going to leverage `Data.Ix`, to let us enumerate over all cells in a grid
 with `range :: ((Int, Int), (Int, Int)) -> [(Int, Int)]`.  `Data.Ix` also gives
 us `index :: (Int, Int) -> Int`, which allows us to "encode" a coordinate as an
-`Int`, so we can use it with the `IntSet` that we wrote earlier.
+`Int`, so we can use it with the `IntSet` that we wrote earlier.  (You could
+just as easily use a `Set (Int, Int)` instead of an `IntSet` under `index`, but
+it's significantly less performant)
 
 ```haskell
 litGroups :: [[Bool]] -> Disjoints
@@ -1548,6 +1550,127 @@ Day 16
 *([code][d16c])*
 
 [d16c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day16.hs
+
+Day 16 was one of my favorites!  It was what prompted this [joyful tweet][group
+theory tweet]:
+
+> Your friends: Group theory is nice but it's it'll never be useful for
+> programming.
+>
+> #adventofcode: "You come upon a very unusual sight; a group of programs here
+> appear to be dancing..."
+
+
+[group theory tweet]: https://twitter.com/mstk/status/942198298672164864
+
+One thing you can notice is that you can basically collect all of the
+swaps/permutations separately, and then all of the renaming separately, and
+then apply them separately.  They really exist on different "planes", so to
+speak.
+
+That being said, we can make a data structure that represents a permutation:
+
+```haskell
+newtype Perm a = P { permMap :: M.Map a a }
+    deriving Show
+
+lookupPerm :: Ord a => Perm a -> a -> a
+lookupPerm p k = M.findWithDefault k k (permMap p)
+```
+
+Where a `Map` like `M.fromList [(1,3),(3,4),(4,1)]` would turn the list
+`[1,2,3,4,5]` to `[3,2,4,1,5]` ("move `3` to `1`, `4` to `3`, etc.").
+"Following" a permutation is done using `lookupPerm` -- `lookupPerm` for the
+example permutation with `1` would give `3`., on `5` would give `5`, etc.
+
+`Perm` is a Monoid, where `<>` is composing/sequencing permutations, and
+`mempty` is the identity permutation:
+
+```haskell
+instance Ord a => Semigroup (Perm a) where
+    x <> y = P $ (lookupPerm x <$> permMap y) `M.union` permMap x
+instance Ord a => Monoid (Perm a) where
+    mappend = (<>)
+    mempty  = P M.empty
+```
+
+A full description of a dance is then just a collection of shufflings and a
+collection of renamings:
+
+```haskell
+type Dance = (Perm Int, Dual (Perm Char))
+```
+
+We use `Dual (Perm Char)` to describe the renamings because renamings compose
+in the opposite direction of shuffles.  `Dual` is a newtype wrapper that gives
+a new `Monoid` instance where `<>` is backwards (`mappend (Dual x) (Dual y) =
+Dual (mappend y x)`)
+
+Because of the `Monoid` instance of tuples, `Dance` is a `Monoid`, where
+composing dances is composing the two permutations.
+
+We can "apply" a Dance:
+
+```haskell
+runDance :: Dance -> String
+runDance (pI, pN) = lookupPerm (getDual pN)
+                  . toName
+                  . lookupPerm pI
+                <$> [0..15]
+  where
+    toName c = chr (c + ord 'a')
+```
+
+Which is, for all of the slots in our domain (`[1..15]`), we follow `pI` (the
+shuffles), assign them their proper names (with `toName`), and follow `pN` (the
+renamings).
+
+From here, we can write a function to parse a single dance move:
+
+```haskell
+parseMove :: String -> Dance
+parseMove = \case
+    's':(read->n)                     -> (rotator n  , mempty            )
+    'x':(map read.splitOn "/"->n:m:_) -> (swapper n m, mempty            )
+    'p':n:_:m:_                       -> (mempty     , Dual (swapper n m))
+    _                                 -> error "No parse"
+  where
+    rotator :: Int -> Perm Int
+    rotator n = P $ M.fromList [ (i, (i - n) `mod` 16) | i <- [0..15] ]
+    swapper :: Ord a => a -> a -> Perm a
+    swapper x y = P $ M.fromList [ (x, y), (y, x) ]
+```
+
+And then `foldMap` it on all of the lines:
+
+```haskell
+parse :: String -> Dance
+parse = foldMap parseMove . splitOn ","
+```
+
+`foldMap :: (String -> Dance) -> [String] -> Dance` maps our parsing function
+to create a bunch of `Dance`s, and then folds/composes them all together.
+
+So that's basically just part 1!
+
+```haskell
+day16a :: String -> String
+day16a = runDance . parse
+```
+
+Part 2 we can use `stimes :: Semigroup m => Int -> m -> m`, which does
+*efficient* exponentiation-by-squaring.  If we use `stimes 1000000000`, it'll
+compose the same item with itself one billion times by only doing about *30*
+composition operations.  This makes Part 2 doable in reasonable time:
+
+```haskell
+day16b :: String -> String
+day16b = runDance . stimes 1e9 . parse
+```
+
+If we naively "ran" the dance over and over again, we'd have to do one billion
+operations.  However, using smart exponentiation-by-squaring with `stimes`, we
+do the same thing with only about 30 operations!
 
 ### Day 16 Benchmarks
 
