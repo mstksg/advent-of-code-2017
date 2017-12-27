@@ -1789,6 +1789,237 @@ Day 18
 
 [d18c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day18.hs
 
+Day 18 was pretty fun, and I'm probably going to write a blog post on my final
+solution at some point.  It's nice because you can basically "compile" your
+code to run on an abstract machine, and the difference between Part 1 and Part
+2 is pretty much just the interpretation of that machine.
+
+### The Language
+
+First, we can look at an encoding of our language, as a simple ADT describing
+each of the commands.
+
+```haskell
+type Addr = Either Char Int
+
+addr :: String -> Addr
+addr [c] | isAlpha c = Left c
+addr str = Right (read str)
+
+data Op = OSnd Addr
+        | OBin (Int -> Int -> Int) Char Addr
+        | ORcv Char
+        | OJgz Addr Addr
+
+parseOp :: String -> Op
+parseOp inp = case words inp of
+    "snd":(addr->c):_           -> OSnd c
+    "set":(x:_):(addr->y):_     -> OBin (const id) x y
+    "add":(x:_):(addr->y):_     -> OBin (+)        x y
+    "mul":(x:_):(addr->y):_     -> OBin (*)        x y
+    "mod":(x:_):(addr->y):_     -> OBin mod        x y
+    "rcv":(x:_):_               -> ORcv x
+    "jgz":(addr->x):(addr->y):_ -> OJgz x y
+    _                           -> error "Bad parse"
+
+parse :: String -> Tape Op
+parse = unsafeTape . map parseOp . lines
+```
+
+Here I'm using `Tape Op` to represent the current program memory and position
+of the program counter -- it's a list of commands, essentially, "focused" on a
+specific point with O(1) access to that focus and O(n) jumps.  It's probably
+better as a vector paired with an Int, but I already had my `Tape` code from
+earlier!
+
+### The Abstract Machine
+
+Now to define the abstract machine (the "IO", so to speak) that we run our
+program on.
+
+There are really only two ways that our program interacts with an outside
+world:
+
+1.  `Snd`-ing, which takes a single `Int` as a parameter and has no result
+2.  `Rcv`-ing, which takes a single `Int` as a parameter and has an `Int`
+    result
+
+The `Rcv` `Int` parameter will be the value of the register being `Rcv`'d.  It
+is used by Part 1, but not by Part 2.
+
+```haskell
+data Command :: Type -> Type where
+    CRcv :: Int -> Command Int    -- ^ input is current value of buffer
+    CSnd :: Int -> Command ()     -- ^ input is thing being sent
+
+type Machine = Prompt Command
+```
+
+Here I am using the great *MonadPrompt* library, which allows us to create an
+abstract `Monad` from a GADT of commands.  Our `Machine` (a type synonym of
+`Prompt Command`) will have a `Functor`, `Applicative`, and `Monad` instance
+(so `fmap`, `return`, etc.), but also two "effectful commands":
+
+```haskell
+(prompt . CRcv) :: Int -> Machine Int
+(prompt . CSnd) :: Int -> Machine ()
+```
+
+You can think of it as primitives for our monads, like `putStrLn` and `getLine`
+for `IO`.
+
+I find it convenient to alias these:
+
+```haskell
+rcvMachine :: Int -> Machine Int
+rcvMachine = prompt . CRcv
+
+sndMachine :: Int -> Machine ()
+sndMachine = prompt . CSnd
+```
+
+The *MonadPrompt* library gives us the ability to "run" a `Prompt Command` by
+giving an *interpreter function*:
+
+```haskell
+runPromptM
+    :: Monad m
+    => (forall x. Command x -> m x)
+    -> Prompt Command a
+    -> m a
+```
+
+Essentially, given a way to "interpret" any `Command` in the context of a monad
+of our choice, `m`, it will "run" the `Prompt Command` for us, firing our
+interpreter whenever necessary.
+
+### Language Logic
+
+Now to implement the language itself:
+
+```haskell
+data ProgState = PS { _psTape :: Tape Op
+                    , _psRegs :: M.Map Char Int
+                    }
+makeClassy ''ProgState
+
+type TapeProg = MaybeT (StateT ProgState Machine)
+```
+
+Our stepping of our program needs some monad to work with, so we use `MaybeT
+(StateT ProgState Machine)`.  The `MaybeT` parameter tells us if our program
+leaves the bounds of the tape, and `StateT` keeps track of the `ProgState`,
+which contains the current tape with position and the values in all of the
+registers.
+
+We write an action to execute a single command:
+
+```haskell
+stepTape :: TapeProg ()
+stepTape = use (psTape . tFocus) >>= \case
+    OSnd x -> do
+      lift . lift . sndMachine =<< addrVal x
+      advance 1
+    OBin f x y -> do
+      yVal <- addrVal y
+      psRegs . at x . non 0 %= (`f` yVal)
+      advance 1
+    ORcv x -> do
+      y <- lift . lift . rcvMachine
+       =<< use (psRegs . at x . non 0)
+      psRegs . at x . non 0 .= y
+      advance 1
+    OJgz x y -> do
+      xVal <- addrVal x
+      moveAmt <- if xVal > 0
+                   then addrVal y
+                   else return 1
+      advance moveAmt
+  where
+    addrVal (Left r)  = use (psRegs . at r . non 0)
+    addrVal (Right x) = return x
+    advance n = do
+      Just t' <- move n <$> use psTape
+      psTape .= t'
+```
+
+Sorry for the gratuitous usage of `lens`!  It's just so convenient for a
+`State` context :)  `use` is basically a way to *get* a specific part of our
+state (`psTape . tFocus` gets us the focus of our state's tape).  `%=` allows
+us to modify values in our state with a given function.  `.=` allows us to set
+values in our state to a given value.
+
+`psRegs . at x . non 0` is an interesting lens (that we can give to `use` or
+`%=`), and does most of our heavy lifting in managing our registers.  This gets
+the value in the `_psRegs` register of our state, at the *key* `x`, *but*
+treating it as 0 if the key is not found.
+
+So, something like:
+
+```haskell
+psRegs . at x . non 0 .= y
+```
+
+Will set the register map's key `x` to be `y`.  (Also an interesting benefit:
+if `y` is 0, it will delete the key `x` from the map for us)
+
+And, something like:
+
+```haskell
+psRegs . at x . non 0 %= (`f` yVal)
+```
+
+Will modify the register map's key `x` value with the function ``(`f` yVal)``.
+
+```haskell
+use (psRegs . at r . non 0)
+```
+
+Will give us the current register's key `r` value, giving us 0 if it does not
+exist.
+
+Knowing this, you should be able to see most of the logic going on here.  I had
+a bit of fun with the definition of `advance`.  `move n` is from our `Tape`
+API, and returns `Nothing` if you move out of the tape bounds.  Pattern
+matching on `Just` lets us trigger the "failure" case if the pattern match
+fails, which for `MaybeT m` is `MaybeT (return Nothing)` -- a "`Maybe`
+failure".
+
+Now, `stepTape` is an action (in `State` and `Maybe`) that uses an underlying
+`Machine` monad to step our tape one single step.  We can "run" it purely to
+get the underlying `Machine` action using:
+
+```haskell
+execTapeProg :: TapeProg a -> ProgState -> Machine ProgState
+execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
+```
+
+Which will "run" a `TapeProg a`, with a given state, to produce the `Machine`
+action (basically, a tree of nested `CRcv` and `CSnd`).
+
+Conceptually, this is similar to how `execStateT :: StateT s IO a -> IO s`
+produces an `IO` action that computes the final state that the `execStateT`
+encodes.
+
+We now have an action to take our tape a single step, but our Part 1 program
+actually wants us to repeat the action until we go out of bounds.  This looks
+like a job for `many`, from the very popular `Alternative` typeclass (from
+*Control.Applicative*)):
+
+```haskell
+many :: MaybeT m a -> MaybeT m [a]
+many :: TapeProg a -> TapeProg [a]
+```
+
+`many` essentially repeats an action several times until it fails.  For the
+case of `TapeProg`, this means that it repeats an action several times until
+the tape head goes out of bounds:
+
+```haskell
+stepTape      :: TapeProg ()
+many stepTape :: TapeProg [()]
+```
+
 ### Day 18 Benchmarks
 
 ```

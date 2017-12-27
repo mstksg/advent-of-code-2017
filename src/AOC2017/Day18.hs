@@ -24,6 +24,12 @@ import           Data.Maybe                (fromJust, maybeToList)
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
 
+{-
+******************
+*  The Language  *
+******************
+-}
+
 type Addr = Either Char Int
 
 addr :: String -> Addr
@@ -35,16 +41,13 @@ data Op = OSnd Addr
         | ORcv Char
         | OJgz Addr Addr
 
-instance Show Op where
-    show _ = "Op"
-
 parseOp :: String -> Op
 parseOp inp = case words inp of
     "snd":(addr->c):_           -> OSnd c
     "set":(x:_):(addr->y):_     -> OBin (const id) x y
-    "add":(x:_):(addr->y):_     -> OBin (+) x y
-    "mul":(x:_):(addr->y):_     -> OBin (*) x y
-    "mod":(x:_):(addr->y):_     -> OBin mod x y
+    "add":(x:_):(addr->y):_     -> OBin (+)        x y
+    "mul":(x:_):(addr->y):_     -> OBin (*)        x y
+    "mod":(x:_):(addr->y):_     -> OBin mod        x y
     "rcv":(x:_):_               -> ORcv x
     "jgz":(addr->x):(addr->y):_ -> OJgz x y
     _                           -> error "Bad parse"
@@ -52,39 +55,53 @@ parseOp inp = case words inp of
 parse :: String -> Tape Op
 parse = unsafeTape . map parseOp . lines
 
-data ProgState = PS { _psTape :: Tape Op
-                    , _psRegs :: M.Map Char Int
-                    }
+{-
+**************************
+*  The Abstract Machine  *
+**************************
+-}
 
-makeClassy ''ProgState
-
+-- | Abstract data type describing "IO" available to the abstract machine
 data Command :: Type -> Type where
     CRcv :: Int -> Command Int    -- ^ input is current value of buffer
     CSnd :: Int -> Command ()     -- ^ input is thing being sent
 
+type Machine = Prompt Command
+
+rcvMachine :: Int -> Machine Int
+rcvMachine = prompt . CRcv
+
+sndMachine :: Int -> Machine ()
+sndMachine = prompt . CSnd
+
+data ProgState = PS { _psTape :: Tape Op
+                    , _psRegs :: M.Map Char Int
+                    }
+makeClassy ''ProgState
+
 -- | Context in which Tape commands are run.  Tape commands have access to
--- an underlying 'Prompt Command' effect monad that allows it to 'Rcv' and
+-- an underlying 'Machine' effect monad that allows it to 'Rcv' and
 -- 'Snd'.
 --
 -- Nothing = program terminates by running out of bounds
-type TapeProg = MaybeT (StateT ProgState (Prompt Command))
-execTapeProg :: TapeProg a -> ProgState -> Prompt Command ProgState
+type TapeProg = MaybeT (StateT ProgState Machine)
+execTapeProg :: TapeProg a -> ProgState -> Machine ProgState
 execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
 
 -- | Single step through program tape.
 stepTape :: TapeProg ()
 stepTape = use (psTape . tFocus) >>= \case
     OSnd x -> do
-      lift . lift . prompt . CSnd =<< addrVal x
+      lift . lift . sndMachine =<< addrVal x
       advance 1
     OBin f x y -> do
       yVal <- addrVal y
       psRegs . at x . non 0 %= (`f` yVal)
       advance 1
     ORcv x -> do
-      y <- lift . lift . prompt . CRcv
+      y <- lift . lift . rcvMachine
        =<< use (psRegs . at x . non 0)
-      psRegs . at x .= Just y
+      psRegs . at x . non 0 .= y
       advance 1
     OJgz x y -> do
       xVal <- addrVal x
@@ -98,6 +115,12 @@ stepTape = use (psTape . tFocus) >>= \case
     advance n = do
       Just t' <- move n <$> use psTape
       psTape .= t'
+
+{-
+************************
+*  Context for Part A  *
+************************
+-}
 
 -- | Context in which to interpret Command for Part A
 --
@@ -124,6 +147,12 @@ day18a = show
        . execPartA . runPromptM interpretA
        . execTapeProg (many stepTape)    -- stepTape until program terminates
        . (`PS` M.empty) . parse
+
+{-
+************************
+*  Context for Part B  *
+************************
+-}
 
 -- | Context in which to interpret Command for Part B
 --
