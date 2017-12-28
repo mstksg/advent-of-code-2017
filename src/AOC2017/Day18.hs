@@ -1,15 +1,15 @@
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs                  #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TemplateHaskell        #-}
-{-# LANGUAGE TypeInType             #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 module AOC2017.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
+import           AOC2017.Util.Accum
+import           AOC2017.Util.Prompt       ()
 import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move, unsafeTape)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
@@ -20,17 +20,11 @@ import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer
 import           Data.Char                 (isAlpha)
+import           Data.Foldable
 import           Data.Kind                 (Type)
-import           Data.Maybe                (fromJust, maybeToList)
+import           Data.Maybe                (fromJust)
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
-
-instance MonadPrompt p m => MonadPrompt p (StateT s m) where
-    prompt = lift . prompt
-
-instance MonadPrompt p m => MonadPrompt p (MaybeT m) where
-    prompt = lift . prompt
-
 
 {-
 ******************
@@ -87,15 +81,6 @@ data ProgState = PS { _psTape :: Tape Op
   deriving Show
 makeClassy ''ProgState
 
----- | Context in which Tape commands are run.  Tape commands have access to
----- an underlying 'Machine' effect monad that allows it to 'Rcv' and
----- 'Snd'.
-----
----- Nothing = program terminates by running out of bounds
---type TapeProg = MaybeT (StateT ProgState Machine)
---execTapeProg :: TapeProg a -> ProgState -> Machine ProgState
---execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
-
 -- | Single step through program tape.
 stepTape :: (MonadState ProgState m, MonadPrompt Command m) => m ()
 stepTape = use (psTape . tFocus) >>= \case
@@ -136,18 +121,18 @@ stepTape = use (psTape . tFocus) >>= \case
 --
 -- State should probably be Accum instead, but Accum is in any usable
 -- version of transformers yet.
-type PartA = StateT (Maybe Int) (Writer [Int])
+type PartA = AccumT (Last Int) (Writer [Int])
 execPartA :: PartA a -> Int
-execPartA = head . snd . runWriter . flip execStateT Nothing
+execPartA = head . snd . runWriter . flip execAccumT mempty
 
 -- | Interpet Command for Part A
 interpretA :: Command a -> PartA a
 interpretA = \case
     CRcv x -> do
       when (x /= 0) $
-        lift . tell . maybeToList =<< get
+        lift . tell . toList =<< look
       return x
-    CSnd x -> put (Just x)
+    CSnd x -> add (Last (Just x))
 
 day18a :: Challenge
 day18a = show
