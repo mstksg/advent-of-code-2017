@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeInType             #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module AOC2017.Day18 (day18a, day18b) where
 
@@ -13,16 +14,23 @@ import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move, unsafeT
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
 import           Control.Monad             (guard, when)
-import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
-import           Control.Monad.State       (StateT(..), execStateT, evalStateT, get, put)
+import           Control.Monad.Prompt
+import           Control.Monad.State
 import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Control.Monad.Writer      (Writer, runWriter, tell)
+import           Control.Monad.Writer
 import           Data.Char                 (isAlpha)
 import           Data.Kind                 (Type)
 import           Data.Maybe                (fromJust, maybeToList)
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
+
+instance MonadPrompt p m => MonadPrompt p (StateT s m) where
+    prompt = lift . prompt
+
+instance MonadPrompt p m => MonadPrompt p (MaybeT m) where
+    prompt = lift . prompt
+
 
 {-
 ******************
@@ -40,6 +48,7 @@ data Op = OSnd Addr
         | OBin (Int -> Int -> Int) Char Addr
         | ORcv Char
         | OJgz Addr Addr
+instance Show Op where show _ = "Op"
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
@@ -66,41 +75,39 @@ data Command :: Type -> Type where
     CRcv :: Int -> Command Int    -- ^ input is current value of buffer
     CSnd :: Int -> Command ()     -- ^ input is thing being sent
 
-type Machine = Prompt Command
-
-rcvMachine :: Int -> Machine Int
+rcvMachine :: MonadPrompt Command m => Int -> m Int
 rcvMachine = prompt . CRcv
 
-sndMachine :: Int -> Machine ()
+sndMachine :: MonadPrompt Command m => Int -> m ()
 sndMachine = prompt . CSnd
 
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
+  deriving Show
 makeClassy ''ProgState
 
--- | Context in which Tape commands are run.  Tape commands have access to
--- an underlying 'Machine' effect monad that allows it to 'Rcv' and
--- 'Snd'.
---
--- Nothing = program terminates by running out of bounds
-type TapeProg = MaybeT (StateT ProgState Machine)
-execTapeProg :: TapeProg a -> ProgState -> Machine ProgState
-execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
+---- | Context in which Tape commands are run.  Tape commands have access to
+---- an underlying 'Machine' effect monad that allows it to 'Rcv' and
+---- 'Snd'.
+----
+---- Nothing = program terminates by running out of bounds
+--type TapeProg = MaybeT (StateT ProgState Machine)
+--execTapeProg :: TapeProg a -> ProgState -> Machine ProgState
+--execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
 
 -- | Single step through program tape.
-stepTape :: TapeProg ()
+stepTape :: (MonadState ProgState m, MonadPrompt Command m) => m ()
 stepTape = use (psTape . tFocus) >>= \case
     OSnd x -> do
-      lift . lift . sndMachine =<< addrVal x
+      sndMachine =<< addrVal x
       advance 1
     OBin f x y -> do
       yVal <- addrVal y
       psRegs . at x . non 0 %= (`f` yVal)
       advance 1
     ORcv x -> do
-      y <- lift . lift . rcvMachine
-       =<< use (psRegs . at x . non 0)
+      y <- rcvMachine =<< use (psRegs . at x . non 0)
       psRegs . at x . non 0 .= y
       advance 1
     OJgz x y -> do
@@ -145,7 +152,7 @@ interpretA = \case
 day18a :: Challenge
 day18a = show
        . execPartA . runPromptM interpretA
-       . execTapeProg (many stepTape)    -- stepTape until program terminates
+       . execStateT (runMaybeT (many stepTape))  -- stepTape until program terminates
        . (`PS` M.empty) . parse
 
 {-
@@ -154,47 +161,39 @@ day18a = show
 ************************
 -}
 
--- | Context in which to interpret Command for Part B
---
--- The State parameter is the input buffer, the Writer parameter is the
--- emitted items.  Maybe is whether or not the thread runs out of input
--- items
-type PartB = MaybeT (StateT [Int] (Writer [Int]))
-runPartB :: [Int] -> PartB a -> ((Maybe a, [Int]), [Int])
-runPartB buf = runWriter . flip runStateT buf . runMaybeT
+data Thread = T { _tState   :: ProgState
+                , _tBuffer  :: [Int]
+                }
+makeClassy ''Thread
 
--- | Interpet Command for Part B
+-- | Context in which to interpret Command for Part B
+type PartB s = MaybeT (State s)
+
+-- | Interpet Command for Part B, with an [Int] writer side-channel
 interpretB
     :: Command a
-    -> PartB a
+    -> WriterT [Int] (PartB [Int]) a
 interpretB = \case
     CSnd x -> tell [x]
     CRcv _ -> get >>= \case
       []   -> empty
       x:xs -> put xs >> return x
 
-data Thread = T { _tState   :: ProgState
-                , _tBuffer  :: [Int]
-                }
-makeClassy ''Thread
+-- | Single step through a thread.  Nothing = either the thread terminates,
+-- or requires extra input.
+stepThread :: PartB Thread [Int]
+stepThread = do
+    ps0        <- use tState
+    (ps1, out) <- zoom tBuffer $ runWriterT
+                               . runPromptM interpretB
+                               $ execStateT stepTape ps0
+    tState .= ps1
+    return out
 
 type MultiState = V.Vector 2 Thread
 
--- | Single step through a thread.  Nothing = either the thread terminates,
--- or requires extra input.
-stepThread :: StateT Thread Maybe [Int]
-stepThread = StateT go
-  where
-    go :: Thread -> Maybe ([Int], Thread)
-    go (T st buf) = (out,) . (`T` buf') <$> t'
-      where
-        ((t', buf'), out) = runPartB buf
-                          . runPromptM interpretB
-                          . flip execTapeProg st
-                          $ stepTape
-
 -- | Single step through both threads.  Nothing = both threads terminate
-stepThreads :: StateT MultiState Maybe [Int]
+stepThreads :: PartB MultiState [Int]
 stepThreads = do
     outA <- zoom (V.ix 0) $ concat <$> many stepThread
     outB <- zoom (V.ix 1) $ concat <$> many stepThread
@@ -206,7 +205,8 @@ stepThreads = do
 day18b :: Challenge
 day18b (parse->t) = show . length . concat
                   . fromJust
-                  $ evalStateT (many stepThreads) ms
+                  . evalState (runMaybeT (many stepThreads))
+                  $ ms
   where
     Just ms = V.fromList [ T (PS t (M.singleton 'p' 0)) []
                          , T (PS t (M.singleton 'p' 1)) []
