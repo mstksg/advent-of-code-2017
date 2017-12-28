@@ -1,5 +1,9 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Control.Monad.Trans.Accum
@@ -65,6 +69,11 @@ import Control.Monad.Signatures
 #if !MIN_VERSION_base(4,8,0)
 import Data.Monoid
 #endif
+
+import qualified Control.Monad.Writer as MTL
+
+instance (Monoid v, MTL.MonadWriter w m) => MTL.MonadWriter w (AccumT v m) where
+    tell = lift . MTL.tell
 
 -- ---------------------------------------------------------------------------
 -- | An accumulation monad parameterized by the type @w@ of output to accumulate.

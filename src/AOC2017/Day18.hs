@@ -8,19 +8,18 @@
 module AOC2017.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
-import           AOC2017.Util.Accum
+import           AOC2017.Util.Accum        (AccumT(..), execAccumT, look, add)
 import           AOC2017.Util.Prompt       ()
 import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move, unsafeTape)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
 import           Control.Monad             (guard, when)
-import           Control.Monad.Prompt
-import           Control.Monad.State
-import           Control.Monad.Trans.Class (lift)
+import           Control.Monad.Prompt      (MonadPrompt(..), runPromptM)
+import           Control.Monad.State       (MonadState(..), execStateT, State, evalState)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Control.Monad.Writer
+import           Control.Monad.Writer      (First(..), Last(..), MonadWriter(..), WriterT(..), Writer, execWriter)
 import           Data.Char                 (isAlpha)
-import           Data.Foldable
+import           Data.Coerce               (coerce)
 import           Data.Kind                 (Type)
 import           Data.Maybe                (fromJust)
 import qualified Data.Map                  as M
@@ -42,7 +41,6 @@ data Op = OSnd Addr
         | OBin (Int -> Int -> Int) Char Addr
         | ORcv Char
         | OJgz Addr Addr
-instance Show Op where show _ = "Op"
 
 parseOp :: String -> Op
 parseOp inp = case words inp of
@@ -78,7 +76,6 @@ sndMachine = prompt . CSnd
 data ProgState = PS { _psTape :: Tape Op
                     , _psRegs :: M.Map Char Int
                     }
-  deriving Show
 makeClassy ''ProgState
 
 -- | Single step through program tape.
@@ -116,23 +113,20 @@ stepTape = use (psTape . tFocus) >>= \case
 
 -- | Context in which to interpret Command for Part A
 --
--- State parameter is the most recent sent item.  Writer parameter is all
--- of the Rcv'd items.
---
--- State should probably be Accum instead, but Accum is in any usable
--- version of transformers yet.
-type PartA = AccumT (Last Int) (Writer [Int])
+-- Accum parameter is the most recent sent item.  Writer parameter is the
+-- first Rcv'd item.
+type PartA = AccumT (Last Int) (Writer (First Int))
 execPartA :: PartA a -> Int
-execPartA = head . snd . runWriter . flip execAccumT mempty
+execPartA = fromJust . getFirst . execWriter . flip execAccumT mempty
 
 -- | Interpet Command for Part A
 interpretA :: Command a -> PartA a
 interpretA = \case
     CRcv x -> do
       when (x /= 0) $
-        lift . tell . toList =<< look
+        tell . coerce =<< look
       return x
-    CSnd x -> add (Last (Just x))
+    CSnd x -> add (pure x)
 
 day18a :: Challenge
 day18a = show
@@ -163,6 +157,9 @@ interpretB = \case
     CRcv _ -> get >>= \case
       []   -> empty
       x:xs -> put xs >> return x
+
+-- runTapeB :: ProgState -> PartB Thread (ProgState, [Int])
+-- runTapeB = zoom tBuffer . runWriterT . runPromptM interpretB . execStateT stepTape
 
 -- | Single step through a thread.  Nothing = either the thread terminates,
 -- or requires extra input.
