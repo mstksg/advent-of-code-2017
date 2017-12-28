@@ -1990,14 +1990,18 @@ Now, `stepTape` is an action (in `State` and `Maybe`) that uses an underlying
 get the underlying `Machine` action using:
 
 ```haskell
-execTapeProg :: TapeProg a -> ProgState -> Machine ProgState
+runTapeProg :: TapeProg a -> (ProgState -> Machine (a, ProgState))
+runTapeProg tp ps = flip runStateT ps . runMaybeT $ tp
+
+execTapeProg :: TapeProg a -> (ProgState -> Machine (a, ProgState))
 execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
 ```
 
 Which will "run" a `TapeProg a`, with a given state, to produce the `Machine`
-action (basically, a tree of nested `CRcv` and `CSnd`).
+action (basically, a tree of nested `CRcv` and `CSnd`).  You can think of this
+as "compiling" a `TapeProg a` to be a `ProgState -> Machine (a, ProgState)`
 
-Conceptually, this is similar to how `execStateT :: StateT s IO a -> IO s`
+Conceptually, this is similar to how `runStateT :: StateT s IO a -> IO (a, s)`
 produces an `IO` action that computes the final state that the `execStateT`
 encodes.
 
@@ -2018,6 +2022,51 @@ the tape head goes out of bounds:
 ```haskell
 stepTape      :: TapeProg ()
 many stepTape :: TapeProg [()]
+```
+
+### Part 1
+
+Okay, so, once we get a `ProgState -> Machine ProgState` that represents
+repeatedly running `stepTape` until we run out of bounds, how do we get our
+answer?
+
+Part 1 asks for the first successful `rcv` ("recover").  We need to properly
+interpret our `Command` in an environment that lets us recover this.
+
+We can use `StateT (Maybe Int) (Writer [Int])`:
+
+*   The `Maybe Int` state represents the last thing "sent".
+*   The `[Int]` writer log represents all of the "recovered" things.
+
+```haskell
+type PartA = StateT (Maybe Int) (Writer [Int])
+```
+
+Interpreting this is straightforward:
+
+```haskell
+interpretA :: Command a -> PartA a
+interpretA = \case
+    CSnd x -> put (Just x)
+    CRcv x -> do
+      when (x /= 0) $
+        lastSent <- get
+        forM_ lastSet $ \y ->
+          lift $ tell [y]
+      return x
+```
+
+And now we can "run" it to get our Part 1 answer!
+
+```haskell
+execPartA :: PartA a -> Int
+execPartA = head . snd . runWriter . flip execStateT Nothing
+
+day18a :: Tape Op -> Int
+day18a = execPartA                    -- run the `PartA` to get the answer
+       . runPromptM interpretA        -- interpret `Machine ProgState` to `PartA ProgState`
+       . execTapeProg (many stepTape) -- compile `many stepTape` to `Machine ProgState`
+       . (`PS` M.empty)               -- assemble `ProgState`
 ```
 
 ### Day 18 Benchmarks
