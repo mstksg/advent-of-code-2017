@@ -1926,21 +1926,21 @@ parse = V.fromList . map V.fromList . lines
 ### Day 19 Benchmarks
 
 ```
->> Day 18a
+>> Day 19a
 benchmarking...
-time                 450.8 μs   (393.3 μs .. 540.9 μs)
-                     0.898 R²   (0.849 R² .. 0.992 R²)
-mean                 426.0 μs   (403.0 μs .. 476.6 μs)
-std dev              102.4 μs   (39.56 μs .. 179.0 μs)
-variance introduced by outliers: 95% (severely inflated)
+time                 31.26 ms   (30.37 ms .. 31.99 ms)
+                     0.993 R²   (0.978 R² .. 0.999 R²)
+mean                 31.22 ms   (30.63 ms .. 32.06 ms)
+std dev              1.569 ms   (661.8 μs .. 2.179 ms)
+variance introduced by outliers: 17% (moderately inflated)
 
->> Day 18b
+>> Day 19b
 benchmarking...
-time                 232.5 ms   (208.6 ms .. 252.2 ms)
-                     0.991 R²   (0.962 R² .. 1.000 R²)
-mean                 232.9 ms   (224.5 ms .. 240.3 ms)
-std dev              10.83 ms   (7.343 ms .. 13.68 ms)
-variance introduced by outliers: 14% (moderately inflated)]
+time                 28.87 ms   (13.57 ms .. 37.24 ms)
+                     0.598 R²   (0.127 R² .. 0.898 R²)
+mean                 47.90 ms   (38.97 ms .. 60.18 ms)
+std dev              19.34 ms   (13.19 ms .. 27.93 ms)
+variance introduced by outliers: 92% (severely inflated)
 ```
 
 Day 20

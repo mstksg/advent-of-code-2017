@@ -1,7 +1,7 @@
 module AOC2017.Day19 (day19a, day19b) where
 
 import           AOC2017.Types             (Challenge)
-import           Control.Applicative       (many, empty)
+import           Control.Applicative       (many)
 import           Control.Lens              (ix, (^?))
 import           Control.Monad             (guard)
 import           Control.Monad.Trans.Class (lift)
