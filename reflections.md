@@ -1789,286 +1789,6 @@ Day 18
 
 [d18c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day18.hs
 
-Day 18 was pretty fun, and I'm probably going to write a blog post on my final
-solution at some point.  It's nice because you can basically "compile" your
-code to run on an abstract machine, and the difference between Part 1 and Part
-2 is pretty much just the interpretation of that machine.
-
-### The Language
-
-First, we can look at an encoding of our language, as a simple ADT describing
-each of the commands.
-
-```haskell
-type Addr = Either Char Int
-
-addr :: String -> Addr
-addr [c] | isAlpha c = Left c
-addr str = Right (read str)
-
-data Op = OSnd Addr
-        | OBin (Int -> Int -> Int) Char Addr
-        | ORcv Char
-        | OJgz Addr Addr
-
-parseOp :: String -> Op
-parseOp inp = case words inp of
-    "snd":(addr->c):_           -> OSnd c
-    "set":(x:_):(addr->y):_     -> OBin (const id) x y
-    "add":(x:_):(addr->y):_     -> OBin (+)        x y
-    "mul":(x:_):(addr->y):_     -> OBin (*)        x y
-    "mod":(x:_):(addr->y):_     -> OBin mod        x y
-    "rcv":(x:_):_               -> ORcv x
-    "jgz":(addr->x):(addr->y):_ -> OJgz x y
-    _                           -> error "Bad parse"
-
-parse :: String -> Tape Op
-parse = unsafeTape . map parseOp . lines
-```
-
-Here I'm using `Tape Op` to represent the current program memory and position
-of the program counter -- it's a list of commands, essentially, "focused" on a
-specific point with O(1) access to that focus and O(n) jumps.  It's probably
-better as a vector paired with an Int, but I already had my `Tape` code from
-earlier!
-
-### The Abstract Machine
-
-Now to define the abstract machine (the "IO", so to speak) that we run our
-program on.
-
-There are really only two ways that our program interacts with an outside
-world:
-
-1.  `Snd`-ing, which takes a single `Int` as a parameter and has no result
-2.  `Rcv`-ing, which takes a single `Int` as a parameter and has an `Int`
-    result
-
-The `Rcv` `Int` parameter will be the value of the register being `Rcv`'d.  It
-is used by Part 1, but not by Part 2.
-
-```haskell
-data Command :: Type -> Type where
-    CRcv :: Int -> Command Int    -- ^ input is current value of buffer
-    CSnd :: Int -> Command ()     -- ^ input is thing being sent
-
-type Machine = Prompt Command
-```
-
-Here I am using the great *MonadPrompt* library, which allows us to create an
-abstract `Monad` from a GADT of commands.  Our `Machine` (a type synonym of
-`Prompt Command`) will have a `Functor`, `Applicative`, and `Monad` instance
-(so `fmap`, `return`, etc.), but also two "effectful commands":
-
-```haskell
-(prompt . CRcv) :: Int -> Machine Int
-(prompt . CSnd) :: Int -> Machine ()
-```
-
-You can think of it as primitives for our monads, like `putStrLn` and `getLine`
-for `IO`.
-
-I find it convenient to alias these:
-
-```haskell
-rcvMachine :: Int -> Machine Int
-rcvMachine = prompt . CRcv
-
-sndMachine :: Int -> Machine ()
-sndMachine = prompt . CSnd
-```
-
-The *MonadPrompt* library gives us the ability to "run" a `Prompt Command` by
-giving an *interpreter function*:
-
-```haskell
-runPromptM
-    :: Monad m
-    => (forall x. Command x -> m x)
-    -> Prompt Command a
-    -> m a
-```
-
-Essentially, given a way to "interpret" any `Command` in the context of a monad
-of our choice, `m`, it will "run" the `Prompt Command` for us, firing our
-interpreter whenever necessary.
-
-### Language Logic
-
-Now to implement the language itself:
-
-```haskell
-data ProgState = PS { _psTape :: Tape Op
-                    , _psRegs :: M.Map Char Int
-                    }
-makeClassy ''ProgState
-
-type TapeProg = MaybeT (StateT ProgState Machine)
-```
-
-Our stepping of our program needs some monad to work with, so we use `MaybeT
-(StateT ProgState Machine)`.  The `MaybeT` parameter tells us if our program
-leaves the bounds of the tape, and `StateT` keeps track of the `ProgState`,
-which contains the current tape with position and the values in all of the
-registers.
-
-We write an action to execute a single command:
-
-```haskell
-stepTape :: TapeProg ()
-stepTape = use (psTape . tFocus) >>= \case
-    OSnd x -> do
-      lift . lift . sndMachine =<< addrVal x
-      advance 1
-    OBin f x y -> do
-      yVal <- addrVal y
-      psRegs . at x . non 0 %= (`f` yVal)
-      advance 1
-    ORcv x -> do
-      y <- lift . lift . rcvMachine
-       =<< use (psRegs . at x . non 0)
-      psRegs . at x . non 0 .= y
-      advance 1
-    OJgz x y -> do
-      xVal <- addrVal x
-      moveAmt <- if xVal > 0
-                   then addrVal y
-                   else return 1
-      advance moveAmt
-  where
-    addrVal (Left r)  = use (psRegs . at r . non 0)
-    addrVal (Right x) = return x
-    advance n = do
-      Just t' <- move n <$> use psTape
-      psTape .= t'
-```
-
-Sorry for the gratuitous usage of `lens`!  It's just so convenient for a
-`State` context :)  `use` is basically a way to *get* a specific part of our
-state (`psTape . tFocus` gets us the focus of our state's tape).  `%=` allows
-us to modify values in our state with a given function.  `.=` allows us to set
-values in our state to a given value.
-
-`psRegs . at x . non 0` is an interesting lens (that we can give to `use` or
-`%=`), and does most of our heavy lifting in managing our registers.  This gets
-the value in the `_psRegs` register of our state, at the *key* `x`, *but*
-treating it as 0 if the key is not found.
-
-So, something like:
-
-```haskell
-psRegs . at x . non 0 .= y
-```
-
-Will set the register map's key `x` to be `y`.  (Also an interesting benefit:
-if `y` is 0, it will delete the key `x` from the map for us)
-
-And, something like:
-
-```haskell
-psRegs . at x . non 0 %= (`f` yVal)
-```
-
-Will modify the register map's key `x` value with the function ``(`f` yVal)``.
-
-```haskell
-use (psRegs . at r . non 0)
-```
-
-Will give us the current register's key `r` value, giving us 0 if it does not
-exist.
-
-Knowing this, you should be able to see most of the logic going on here.  I had
-a bit of fun with the definition of `advance`.  `move n` is from our `Tape`
-API, and returns `Nothing` if you move out of the tape bounds.  Pattern
-matching on `Just` lets us trigger the "failure" case if the pattern match
-fails, which for `MaybeT m` is `MaybeT (return Nothing)` -- a "`Maybe`
-failure".
-
-Now, `stepTape` is an action (in `State` and `Maybe`) that uses an underlying
-`Machine` monad to step our tape one single step.  We can "run" it purely to
-get the underlying `Machine` action using:
-
-```haskell
-runTapeProg :: TapeProg a -> (ProgState -> Machine (a, ProgState))
-runTapeProg tp ps = flip runStateT ps . runMaybeT $ tp
-
-execTapeProg :: TapeProg a -> (ProgState -> Machine (a, ProgState))
-execTapeProg tp ps = flip execStateT ps . runMaybeT $ tp
-```
-
-Which will "run" a `TapeProg a`, with a given state, to produce the `Machine`
-action (basically, a tree of nested `CRcv` and `CSnd`).  You can think of this
-as "compiling" a `TapeProg a` to be a `ProgState -> Machine (a, ProgState)`
-
-Conceptually, this is similar to how `runStateT :: StateT s IO a -> IO (a, s)`
-produces an `IO` action that computes the final state that the `execStateT`
-encodes.
-
-We now have an action to take our tape a single step, but our Part 1 program
-actually wants us to repeat the action until we go out of bounds.  This looks
-like a job for `many`, from the very popular `Alternative` typeclass (from
-*Control.Applicative*)):
-
-```haskell
-many :: MaybeT m a -> MaybeT m [a]
-many :: TapeProg a -> TapeProg [a]
-```
-
-`many` essentially repeats an action several times until it fails.  For the
-case of `TapeProg`, this means that it repeats an action several times until
-the tape head goes out of bounds:
-
-```haskell
-stepTape      :: TapeProg ()
-many stepTape :: TapeProg [()]
-```
-
-### Part 1
-
-Okay, so, once we get a `ProgState -> Machine ProgState` that represents
-repeatedly running `stepTape` until we run out of bounds, how do we get our
-answer?
-
-Part 1 asks for the first successful `rcv` ("recover").  We need to properly
-interpret our `Command` in an environment that lets us recover this.
-
-We can use `StateT (Maybe Int) (Writer [Int])`:
-
-*   The `Maybe Int` state represents the last thing "sent".
-*   The `[Int]` writer log represents all of the "recovered" things.
-
-```haskell
-type PartA = StateT (Maybe Int) (Writer [Int])
-```
-
-Interpreting this is straightforward:
-
-```haskell
-interpretA :: Command a -> PartA a
-interpretA = \case
-    CSnd x -> put (Just x)
-    CRcv x -> do
-      when (x /= 0) $
-        lastSent <- get
-        forM_ lastSet $ \y ->
-          lift $ tell [y]
-      return x
-```
-
-And now we can "run" it to get our Part 1 answer!
-
-```haskell
-execPartA :: PartA a -> Int
-execPartA = head . snd . runWriter . flip execStateT Nothing
-
-day18a :: Tape Op -> Int
-day18a = execPartA                    -- run the `PartA` to get the answer
-       . runPromptM interpretA        -- interpret `Machine ProgState` to `PartA ProgState`
-       . execTapeProg (many stepTape) -- compile `many stepTape` to `Machine ProgState`
-       . (`PS` M.empty)               -- assemble `ProgState`
-```
-
 ### Day 18 Benchmarks
 
 ```
@@ -2095,6 +1815,113 @@ Day 19
 *([code][d19c])*
 
 [d19c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day19.hs
+
+Ever since discovering how fun `many` is in Day 18, I felt inspired to abuse it
+again in Day 19.
+
+In Day 19 we can use the search monad, `[]`, and combine it with `StateT` to
+make what I call the "effectful search" monad, `StateT s []`.  I go over this a
+bit in an [old blog post][statetlist] of mine.  An action in `StateT s []` is
+an exploration down several paths, where each step could modify an internal `s`
+state kept during the search.
+
+[statetlist]: https://blog.jle.im/entry/unique-sample-drawing-searches-with-list-and-statet.html
+
+In our case we are going to be searching through the cells of a grid, and our
+state will be our current position and previous position.
+
+I'm going to be using the *[linear][]* library's `V2 Int` type to represent a
+point, mostly because it gives us a `Num` instance we can use (to add and
+subtract points).
+
+[linear]: http://hackage.haskell.org/package/linear
+
+Any, here is our single search step:
+
+```haskell
+type Grid  = V.Vector (V.Vector Char)
+type Point = L.V2 Int
+
+neighborsOf :: Point -> [Point]
+neighborsOf p0 = (+ p0) <$> [ L.V2 0 1, L.V2 0 (-1), L.V2 1 0, L.V2 (-1) 0 ]
+
+follow :: Grid -> StateT (Point, Point) [] Char
+follow g = get >>= \(p0, p1) -> do      -- last position, current position
+    Just currChar <- return $ gridAt p1
+    p2 <- case currChar of
+        '+' -> lift $ neighbors p1
+        _   -> return $ p1 + (p1 - p0)
+    Just nextChar <- return $ gridAt p2
+    guard $ p2       /= p0
+    guard $ nextChar /= ' '
+    put (p1, p2)
+    return nextChar
+  where
+    gridAt (L.V2 x y) = (V.!? x) =<< g V.!? y
+```
+
+At each step, we:
+
+1.  Get our current position
+2.  Lookup the character at that position, which might fail if the coordinate
+    is not in our grid.  If it fails, close off this branch.
+3.  If it succeeds, fork into a branch for every potential new point:
+    *   If the current character is `'+'`, we need to turn!  Fork off a new
+        branch for every direction/neighbor.
+    *   If the current character is anything else, we just move in a straight
+        line.  Continue down one single branch with the new next point, in
+        straight-line fashion. (Thanks, [Verlet][])
+4.  Get the character at the new position.  Kill off the fork if the new
+    character is out of bounds.
+4.  Now kill off the current fork if:
+    *   The new point is our previous location.  We don't want to go backwards.
+    *   The new character is a blank line.  This means we reached a dead end.
+5.  If we're still alive, update our state.
+6.  Return the new character!
+
+[Verlet]: https://en.wikipedia.org/wiki/Verlet_integration
+
+And that's it!  One step!
+
+And now, we can repeat this single step multiple times until we fail, using
+`many :: Alternative f => f a -> f [a]`.  `many` will *repeat* the step as many
+times as possible, *collect* all of the results, and *return* them in a list.
+If we `many (follow g)`, we repeat `follow g` until we reach a dead end, and
+then return all of the `Char`s that `follow g` emitted along the way.
+
+```haskell
+followToTheEnd :: Grid -> StateT (Point, Point) [] String
+followToTheEnd g = ('|':) <$> many (follow g)
+```
+
+We add `('|':)` to the beginning of the result so we can account for the first
+position's character.
+
+And that's our full Day 19.  We can use `evalStateT :: StateT (Point, Point) []
+a -> (Point, Point) -> [a]`, to get all of the successful paths (paths that are
+followed to the end, using `many` in our case).  We get the first result using
+`head`.  The result is a list of all characters emitted by the successful path.
+
+```haskell
+day19 :: Grid -> [Char]
+day19 g = head . flip evalStateT p0 $ followToTheEnd g
+  where
+    p0      = (L.V2 x0 (-1), L.V2 x0 0)
+    Just x0 = V.elemIndex '|' (g V.! 0)
+```
+
+Now all that is left is parsing and extracting the answers.
+
+```haskell
+day19a :: String -> String
+day19a = filter isAlpha . day19 . parse
+
+day19b :: String -> Int
+day19b = length . day19 . parse
+
+parse :: String -> V.Vector (V.Vector Char)
+parse = V.fromList . map V.fromList . lines
+```
 
 ### Day 19 Benchmarks
 
