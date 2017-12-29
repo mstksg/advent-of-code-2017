@@ -1,65 +1,66 @@
-{-# LANGUAGE FlexibleContexts #-}
+-- module AOC2017.Day20 (day20a, day20b) where
+module AOC2017.Day20 where
 
-module AOC2017.Day20 (day20a, day20b) where
+import           AOC2017.Types   (Challenge)
+import           AOC2017.Util    (scanlT)
+import           Data.Char       (isDigit)
+import           Data.Foldable   (toList)
+import           Data.List       (find)
+import           Data.List.Split (splitOn)
+import           Data.Maybe      (fromJust)
+import qualified Data.Map        as M
+import qualified Data.Set        as S
+import qualified Data.Vector     as V
+import qualified Linear          as L
 
-import           AOC2017.Types       (Challenge)
-import           Control.Applicative (liftA2)
-import           Control.Monad       (mfilter)
-import           Data.Char           (isDigit)
-import           Data.Foldable       (toList)
-import           Data.List
-import           Data.List.Split     (splitOn)
-import           Data.Maybe          (fromJust)
-import qualified Data.Map            as M
-import qualified Data.Set            as S
-import qualified Data.Vector         as V
-import qualified Linear              as L
+type Point = L.V3 Int
 
-data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
-           , _sVel :: !(V.Vector (Maybe (L.V3 Int)))
-           , _sAcc :: !(V.Vector (Maybe (L.V3 Int)))
-           }
-  deriving Show
+data Particle a = P { _pAcc :: !a
+                    , _pVel :: !a
+                    , _pPos :: !a
+                    }
+  deriving (Functor, Foldable, Traversable, Show, Eq, Ord)
 
-step :: S -> S
-step s@S{..} = s { _sPos = p, _sVel = v }
+type System = [Particle Point]
+
+step :: Num a => Particle a -> Particle a
+step = scanlT (+) 0
+
+collide :: System -> System
+collide s0 = filter ((`S.notMember` collisions) . _pPos) s0
   where
-    [_,v,p] = scanl1 ((V.zipWith . liftA2) (+)) [_sAcc, _sVel, _sPos]
-
-collide :: S -> S
-collide s@S{..} = s { _sPos = mfilter (`S.notMember` collisions) <$> _sPos }
-  where
+    collisions :: S.Set Point
     collisions = M.keysSet . M.filter @Int (> 1)
-               . M.fromListWith (+) . fmap (,1)
-               $ foldMap toList _sPos
+               . M.fromListWith (+)
+               . map ((,1) . _pPos)
+               $ toList s0
 
-norm :: L.V3 Int -> Int
+norm :: Point -> Int
 norm = sum . fmap abs
 
 day20a :: Challenge
-day20a = show . V.minIndex
-       . (fmap . fmap . fmap) norm
-       . (\case S r v a -> V.zipWith3 L.V3 a v r)
+day20a = show . V.minIndex . V.fromList
+       . (map . fmap) norm
        . parse
 
 day20b :: Challenge
 day20b = show . length . fromJust . find stop
-       . map (foldMap toList . _sPos)
-       . iterate (collide . step)
+       . (map . map) (norm . _pPos)
+       . iterate (collide . map step)
        . parse
   where
-    -- assumes there will be at least one particule left
-    stop = (> 1000) . minimum . map norm
+    stop = (> 1000) . minimum
 
-parse :: String -> S
-parse = (\case L.V3 r v a -> S r v a)
-      . traverse (fmap Just . parseLine)
-      . V.fromList . lines
-
-parseLine :: String -> L.V3 (L.V3 Int)
-parseLine (map(read.filter numChar).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
-            = L.V3 (L.V3 pX pY pZ) (L.V3 vX vY vZ) (L.V3 aX aY aZ)
-parseLine _ = error "No parse"
+parse :: String -> System
+parse = map parseLine . lines
+  where
+    parseLine :: String -> Particle Point
+    parseLine (map(read.filter numChar).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
+                = P { _pAcc = L.V3 aX aY aZ
+                    , _pVel = L.V3 vX vY vZ
+                    , _pPos = L.V3 pX pY pZ
+                    }
+    parseLine _ = error "No parse"
 
 numChar :: Char -> Bool
 numChar c = isDigit c || c == '-'

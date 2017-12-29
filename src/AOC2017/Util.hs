@@ -3,10 +3,13 @@ module AOC2017.Util (
   , iterateMaybe
   , (!!!)
   , dup
+  , scanlT
+  , scanrT
   ) where
 
 import           Data.List
-import qualified Data.Text         as T
+import           Data.Traversable
+import qualified Data.Text        as T
 
 -- | Strict (!!)
 (!!!) :: [a] -> Int -> a
@@ -22,3 +25,9 @@ iterateMaybe f x0 = x0 : unfoldr (fmap dup . f) x0
 
 dup :: a -> (a, a)
 dup x = (x, x)
+
+scanlT :: Traversable t => (b -> a -> b) -> b -> t a -> t b
+scanlT f z = snd . mapAccumL (\x -> dup . f x) z
+
+scanrT :: Traversable t => (a -> b -> b) -> b -> t a -> t b
+scanrT f z = snd . mapAccumR (\x -> dup . flip f x) z

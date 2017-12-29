@@ -1950,6 +1950,14 @@ Day 20
 
 [d20c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day20.hs
 
+```haskell
+data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
+           , _sVel :: !(V.Vector (Maybe (L.V3 Int)))
+           , _sAcc :: !(V.Vector (Maybe (L.V3 Int)))
+           }
+  deriving Show
+```
+
 ### Day 20 Benchmarks
 
 ```
