@@ -9,19 +9,19 @@ module AOC2017.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
 import           AOC2017.Util.Accum        (AccumT(..), execAccumT, look, add)
-import           AOC2017.Util.Prompt       ()
 import           AOC2017.Util.Tape         (Tape(..), HasTape(..), move, unsafeTape)
 import           Control.Applicative       (many, empty)
 import           Control.Lens              (makeClassy, use, at, non, (%=), use, (.=), (<>=), zoom)
 import           Control.Monad             (guard, when)
-import           Control.Monad.Prompt      (MonadPrompt(..), runPromptM)
-import           Control.Monad.State       (MonadState(..), execStateT, State, evalState)
+import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
+import           Control.Monad.State       (MonadState(get,put), StateT(..), State, execStateT, evalState)
+import           Control.Monad.Trans.Class (MonadTrans(lift))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Control.Monad.Writer      (First(..), Last(..), MonadWriter(..), WriterT(..), Writer, execWriter)
+import           Control.Monad.Writer      (MonadWriter(..), WriterT(..), Writer, execWriter)
 import           Data.Char                 (isAlpha)
-import           Data.Coerce               (coerce)
 import           Data.Kind                 (Type)
 import           Data.Maybe                (fromJust)
+import           Data.Monoid               (First(..), Last(..))
 import qualified Data.Map                  as M
 import qualified Data.Vector.Sized         as V
 
@@ -67,10 +67,12 @@ data Command :: Type -> Type where
     CRcv :: Int -> Command Int    -- ^ input is current value of buffer
     CSnd :: Int -> Command ()     -- ^ input is thing being sent
 
-rcvMachine :: MonadPrompt Command m => Int -> m Int
+type Machine = Prompt Command
+
+rcvMachine :: Int -> Machine Int
 rcvMachine = prompt . CRcv
 
-sndMachine :: MonadPrompt Command m => Int -> m ()
+sndMachine :: Int -> Machine ()
 sndMachine = prompt . CSnd
 
 data ProgState = PS { _psTape :: Tape Op
@@ -78,18 +80,23 @@ data ProgState = PS { _psTape :: Tape Op
                     }
 makeClassy ''ProgState
 
+-- | Context in which a 'Duet' program runs
+type Duet = MaybeT (StateT ProgState Machine)
+execDuet :: Duet a -> ProgState -> Machine ProgState
+execDuet = execStateT . runMaybeT
+
 -- | Single step through program tape.
-stepTape :: (MonadState ProgState m, MonadPrompt Command m) => m ()
+stepTape :: Duet ()
 stepTape = use (psTape . tFocus) >>= \case
     OSnd x -> do
-      sndMachine =<< addrVal x
+      lift . lift . sndMachine =<< addrVal x
       advance 1
     OBin f x y -> do
       yVal <- addrVal y
       psRegs . at x . non 0 %= (`f` yVal)
       advance 1
     ORcv x -> do
-      y <- rcvMachine =<< use (psRegs . at x . non 0)
+      y <- lift . lift . rcvMachine =<< use (psRegs . at x . non 0)
       psRegs . at x . non 0 .= y
       advance 1
     OJgz x y -> do
@@ -124,14 +131,14 @@ interpretA :: Command a -> PartA a
 interpretA = \case
     CRcv x -> do
       when (x /= 0) $
-        tell . coerce =<< look
+        tell . First . getLast =<< look
       return x
     CSnd x -> add (pure x)
 
 day18a :: Challenge
-day18a = show
-       . execPartA . runPromptM interpretA
-       . execStateT (runMaybeT (many stepTape))  -- stepTape until program terminates
+day18a = show . execPartA
+       . runPromptM interpretA
+       . execDuet (many stepTape)  -- stepTape until program terminates
        . (`PS` M.empty) . parse
 
 {-
@@ -139,11 +146,6 @@ day18a = show
 *  Context for Part B  *
 ************************
 -}
-
-data Thread = T { _tState   :: ProgState
-                , _tBuffer  :: [Int]
-                }
-makeClassy ''Thread
 
 -- | Context in which to interpret Command for Part B
 type PartB s = MaybeT (State s)
@@ -158,35 +160,35 @@ interpretB = \case
       []   -> empty
       x:xs -> put xs >> return x
 
--- runTapeB :: ProgState -> PartB Thread (ProgState, [Int])
--- runTapeB = zoom tBuffer . runWriterT . runPromptM interpretB . execStateT stepTape
+data Thread = T { _tState   :: ProgState
+                , _tBuffer  :: [Int]
+                }
+makeClassy ''Thread
 
 -- | Single step through a thread.  Nothing = either the thread terminates,
 -- or requires extra input.
 stepThread :: PartB Thread [Int]
 stepThread = do
-    ps0        <- use tState
-    (ps1, out) <- zoom tBuffer $ runWriterT
-                               . runPromptM interpretB
-                               $ execStateT stepTape ps0
-    tState .= ps1
+    machine   <- execDuet stepTape <$> use tState
+    (ps, out) <- runWriterT . zoom tBuffer
+               $ runPromptM interpretB machine
+    tState .= ps
     return out
 
 type MultiState = V.Vector 2 Thread
 
 -- | Single step through both threads.  Nothing = both threads terminate
-stepThreads :: PartB MultiState [Int]
+stepThreads :: PartB MultiState Int
 stepThreads = do
     outA <- zoom (V.ix 0) $ concat <$> many stepThread
     outB <- zoom (V.ix 1) $ concat <$> many stepThread
     V.ix 0 . tBuffer <>= outB
     V.ix 1 . tBuffer <>= outA
     guard . not $ null outA && null outB
-    return outB
+    return $ length outB
 
 day18b :: Challenge
-day18b (parse->t) = show . length . concat
-                  . fromJust
+day18b (parse->t) = show . sum . concat
                   . evalState (runMaybeT (many stepThreads))
                   $ ms
   where
