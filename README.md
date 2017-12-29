@@ -29,7 +29,7 @@ processes and how my solutions all work.  Benchmarks also included.
 *   **[Day 16 Reflections][d16r]** *([code][d16c])* *([benchmarks][d16b])*
 *   **[Day 17 Reflections][d17r]** *([code][d17c])* *([benchmarks][d17b])*
 *   **Day 18 Reflections** *([code][d18c])* *([benchmarks][d18b])*
-*   **Day 19 Reflections** *([code][d19c])* *([benchmarks][d19b])*
+*   **[Day 19 Reflections][d19r]** *([code][d19c])* *([benchmarks][d19b])*
 *   **Day 20 Reflections** *([code][d20c])* *([benchmarks][d20b])*
 *   **Day 21 Reflections** *([code][d21c])* *([benchmarks][d21b])*
 *   **Day 22 Reflections** *([code][d22c])* *([benchmarks][d22b])*
