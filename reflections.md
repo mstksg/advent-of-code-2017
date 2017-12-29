@@ -2002,17 +2002,23 @@ day20a = V.minIndex . V.fromList    -- hijacking minIndex from Vector
        . iterate (map step)
 ```
 
-However, we could also be sneaky and just find the "maximum" normed initial
-vector, which is correct in the case where all of our initial accelerations are
-differently normed, and sometimes correct in the case where we have duplicated
-accelerations.
+However, we are really just looking for the asymptotic behavior.  In the long
+run, the distance is dominated by the `|a| t^2` term, so we really just need
+to look for the particle with the highest normed initial acceleration.
 
 ```haskell
 day20a :: System -> Int
 day20a = V.minIndex . V.fromList
-       . (map . fmap) norm
+       . (map . fmap) norm      -- [Particle Point] -> [Particle Int]
        . parse
 ```
+
+The `Ord` instance of `Particle Int` is such that it sorts first by the `_pAcc`
+field, then the `_pVel` field, then the `_pPos` field.  So it'll find first the
+highest normed acceleration, and break ties using the highest normed velocity.
+However, this tie breaking isn't actually sound -- there are situations where
+this won't be true.  However, there were no ties in my data set so this method
+was ok :)
 
 For part 2, we can define a function that takes out all "duplicated" points,
 using a frequency map and filtering for frequencies greater than 1:
@@ -2058,14 +2064,14 @@ parse :: String -> System
 parse = map parseLine . lines
   where
     parseLine :: String -> Particle Point
-    parseLine (map(read.filter numChar).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
+    parseLine (map(read.filter num).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
                 = P { _pAcc = L.V3 aX aY aZ
                     , _pVel = L.V3 vX vY vZ
                     , _pPos = L.V3 pX pY pZ
                     }
     parseLine _ = error "No parse"
-    numChar :: Char -> Bool
-    numChar c = isDigit c || c == '-'
+    num :: Char -> Bool
+    num c = isDigit c || c == '-'
 ```
 
 ### Day 20 Benchmarks

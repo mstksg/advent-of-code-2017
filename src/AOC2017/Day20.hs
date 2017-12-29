@@ -54,11 +54,11 @@ parse :: String -> System
 parse = map parseLine . lines
   where
     parseLine :: String -> Particle Point
-    parseLine (map(read.filter numChar).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
+    parseLine (map(read.filter num).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
                 = P { _pAcc = L.V3 aX aY aZ
                     , _pVel = L.V3 vX vY vZ
                     , _pPos = L.V3 pX pY pZ
                     }
     parseLine _ = error "No parse"
-    numChar :: Char -> Bool
-    numChar c = isDigit c || c == '-'
+    num :: Char -> Bool
+    num c = isDigit c || c == '-'
