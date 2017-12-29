@@ -45,11 +45,10 @@ day20a = show . V.minIndex . V.fromList
 
 day20b :: Challenge
 day20b = show . length . fromJust . find stop
-       . (map . map) (norm . _pPos)
        . iterate (collide . map step)
        . parse
   where
-    stop = (> 1000) . minimum
+    stop = (> 1000) . minimum . map (norm . _pPos)
 
 parse :: String -> System
 parse = map parseLine . lines
@@ -61,6 +60,5 @@ parse = map parseLine . lines
                     , _pPos = L.V3 pX pY pZ
                     }
     parseLine _ = error "No parse"
-
-numChar :: Char -> Bool
-numChar c = isDigit c || c == '-'
+    numChar :: Char -> Bool
+    numChar c = isDigit c || c == '-'

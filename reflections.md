@@ -1950,12 +1950,122 @@ Day 20
 
 [d20c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day20.hs
 
+Day 20 starts out as a simple physics simulator/numerical integrator:
+
 ```haskell
-data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
-           , _sVel :: !(V.Vector (Maybe (L.V3 Int)))
-           , _sAcc :: !(V.Vector (Maybe (L.V3 Int)))
-           }
-  deriving Show
+type Point = L.V3 Int
+
+data Particle a = P { _pAcc :: !a
+                    , _pVel :: !a
+                    , _pPos :: !a
+                    }
+  deriving (Functor, Foldable, Traversable, Show, Eq, Ord)
+
+type System = [Particle Point]
+```
+
+Using the *[linear][]* package again, for `V3`, a 3-vector.  It's also
+convenient to decide a `Particle` to contain a description of its acceleration,
+velocity, and position.  Our whole system will be a list of `Particle Point`s.
+Note that we parameterize `Particle` so that we can give useful higher-kinded
+instances like `Functor` and `Traversable`.
+
+Stepping the simulation ends up being just stepping every particle.
+Interestingly enough, we can actually use `scanl (+) 0` (for `Traversable`) to
+do the integration step:
+
+```haskell
+-- | scanl generalized to work on all Traversable
+scanlT :: Traversable t => (b -> a -> b) -> b -> t a -> t b
+scanlT = -- implementatation left as exercise, but I really wish this was
+         -- already in base :|
+
+step :: Num a => Particle a -> Particle a
+step = scanlT (+) 0
+```
+
+This is because it replaces `_pAcc` with `0 + _pAcc`, and then it replaces
+`_pVel` with `0 + _pAcc + _pVel`, and then finally replaces `_pPos` with `0 +
+_pAcc + _pVel + _pPos` -- just like the problem asks!
+
+For part 1, we can just `map step` a `System` several points, and then find
+closest point:
+
+```haskell
+norm :: Point -> Int
+norm = sum . fmap abs
+
+day20a :: System -> Int
+day20a = V.minIndex . V.fromList    -- hijacking minIndex from Vector
+       . map (norm . _pPos)
+       . (!! 1000)
+       . iterate (map step)
+```
+
+However, we could also be sneaky and just find the "maximum" normed initial
+vector, which is correct in the case where all of our initial accelerations are
+differently normed, and sometimes correct in the case where we have duplicated
+accelerations.
+
+```haskell
+day20a :: System -> Int
+day20a = V.minIndex . V.fromList
+       . (map . fmap) norm
+       . parse
+```
+
+For part 2, we can define a function that takes out all "duplicated" points,
+using a frequency map and filtering for frequencies greater than 1:
+
+```haskell
+collide :: System -> System
+collide s0 = filter ((`S.notMember` collisions) . _pPos) s0
+  where
+    collisions :: S.Set Point
+    collisions = M.keysSet . M.filter @Int (> 1)
+               . M.fromListWith (+)
+               . map ((,1) . _pPos)
+               $ toList s0
+```
+
+Now we just iterate `collide . map step`.
+
+We can pick the thousandth element again, like we might have for part 1.
+However, we can be a little smart with a stopping condition:
+
+```haskell
+day20b :: Challenge
+day20b = show . length . fromJust . find stop
+       . iterate (collide . map step)
+       . parse
+  where
+    stop = (> 1000) . minimum . map (norm . _sPos)
+```
+
+Here, we iterate until the particle *closest* to the origin is greater than
+a 1000-cube away from the origin.  Essentially, this is waiting until all of
+the points clear a 2000-wide cube around the origin.  Thinking about the input,
+there will be some particles that start out near the origin and start heading
+*towards* the origin.  This condition will wait until the last of those
+particles exits the origin cube, and check for the number of collisions then.
+
+### Parsing
+
+We can parse into `System` using really silly view patterns :)
+
+```haskell
+parse :: String -> System
+parse = map parseLine . lines
+  where
+    parseLine :: String -> Particle Point
+    parseLine (map(read.filter numChar).splitOn","->[pX,pY,pZ,vX,vY,vZ,aX,aY,aZ])
+                = P { _pAcc = L.V3 aX aY aZ
+                    , _pVel = L.V3 vX vY vZ
+                    , _pPos = L.V3 pX pY pZ
+                    }
+    parseLine _ = error "No parse"
+    numChar :: Char -> Bool
+    numChar c = isDigit c || c == '-'
 ```
 
 ### Day 20 Benchmarks
@@ -1963,19 +2073,19 @@ data S = S { _sPos :: !(V.Vector (Maybe (L.V3 Int)))
 ```
 >> Day 20a
 benchmarking...
-time                 33.64 ms   (30.59 ms .. 37.78 ms)
-                     0.957 R²   (0.920 R² .. 0.998 R²)
-mean                 33.70 ms   (32.37 ms .. 36.27 ms)
-std dev              3.692 ms   (1.222 ms .. 5.172 ms)
-variance introduced by outliers: 42% (moderately inflated)
+time                 29.87 ms   (28.16 ms .. 32.18 ms)
+                     0.989 R²   (0.979 R² .. 0.997 R²)
+mean                 33.94 ms   (32.33 ms .. 38.26 ms)
+std dev              5.085 ms   (1.678 ms .. 8.683 ms)
+variance introduced by outliers: 61% (severely inflated)
 
 >> Day 20b
 benchmarking...
-time                 74.06 ms   (68.03 ms .. 84.42 ms)
-                     0.964 R²   (0.879 R² .. 0.997 R²)
-mean                 76.05 ms   (72.32 ms .. 83.21 ms)
-std dev              7.736 ms   (4.126 ms .. 11.56 ms)
-variance introduced by outliers: 29% (moderately inflated)
+time                 67.18 ms   (64.33 ms .. 72.99 ms)
+                     0.990 R²   (0.975 R² .. 0.998 R²)
+mean                 66.90 ms   (64.83 ms .. 68.67 ms)
+std dev              3.437 ms   (2.439 ms .. 4.727 ms)
+variance introduced by outliers: 16% (moderately inflated)
 ```
 
 Day 21
