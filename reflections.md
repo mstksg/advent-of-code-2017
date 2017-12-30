@@ -1422,11 +1422,10 @@ litGroups grid = foldMap go (range r)
 
 neighbors :: (Int, Int) -> [(Int, Int)]
 neighbors (x,y) = [ (x+dx, y+dy) | (dx, dy) <- [(0,1),(0,-1),(1,0),(-1,0)]
-                                 , x+dx >= 0
-                                 , y+dy >= 0
-                                 , x+dx < 128
-                                 , y+dy < 128
+                                 , inBounds (x + dx) && inBounds (y + dy)
                   ]
+  where
+    inBounds z = z >= 0 && z < 128
 ```
 
 So part 2 is just running `litGroups` and counting the resulting number of
