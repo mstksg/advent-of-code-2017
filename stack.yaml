@@ -37,14 +37,6 @@ resolver: lts-10.0
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - .
-- location:
-    git: https://github.com/mstksg/finite-typelits.git
-    commit: d6cfd34db8843e66203f44cca1d8dd6fea6b813d
-  extra-dep: true
-- location:
-    git: https://github.com/mstksg/vector-sized.git
-    commit: 782fd4679c2eeab990b70b61432d474e8a77eab5
-  extra-dep: true
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
