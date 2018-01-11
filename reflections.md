@@ -2218,3 +2218,4 @@ mean                 2.643 s    (2.607 s .. 2.668 s)
 std dev              38.04 ms   (0.0 s .. 43.77 ms)
 variance introduced by outliers: 19% (moderately inflated)
 ```
+

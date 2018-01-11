@@ -53,6 +53,7 @@ library
                        AOC2017.Day25
   build-depends:       base >= 4.7 && < 5
                      , MonadPrompt
+                     , pointedlist
                      , aeson
                      , arithmoi
                      , bytestring
@@ -70,9 +71,11 @@ library
                      , monad-control
                      , monad-loops
                      , mtl
+                     , reflection
                      , split
                      , text
                      , transformers
+                     , type-combinators
                      , vector
                      , vector-sized
                      , yaml
