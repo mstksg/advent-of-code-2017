@@ -74,7 +74,7 @@ library
                      , reflection
                      , split
                      , text
-                     , transformers
+                     , transformers >= 0.5.5.0
                      , type-combinators
                      , vector
                      , vector-sized

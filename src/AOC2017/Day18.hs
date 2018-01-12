@@ -1,22 +1,24 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module AOC2017.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
-import           AOC2017.Util.Accum        (AccumT(..), execAccumT, look, add)
+import           AOC2017.Util.Accum
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Fail
 import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
 import           Control.Monad.State       (MonadState, StateT(..), State, execStateT, evalState)
-import           Control.Monad.Trans.Class (MonadTrans(lift))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer
 import           Data.Char                 (isAlpha)
@@ -137,9 +139,10 @@ interpMem = \case
 ************************
 -}
 
-type PartA = MaybeT (StateT ProgState (AccumT (Last Int) (Writer (First Int))))
-
-execPartA :: PartA a -> ProgState -> Int
+execPartA
+    :: MaybeT (StateT ProgState (AccumT (Last Int) (Writer (First Int)))) a
+    -> ProgState
+    -> Int
 execPartA p s = fromJust . getFirst . execWriter
               . flip execAccumT mempty
               . flip execStateT s
@@ -147,13 +150,16 @@ execPartA p s = fromJust . getFirst . execWriter
               $ p
 
 -- | Interpet Command for Part A
-interpA :: Command a -> PartA a
+interpA
+    :: (MonadAccum (Last Int) m, MonadWriter (First Int) m)
+    => Command a
+    -> m a
 interpA = \case
-    CRcv x -> lift . lift $ do
+    CRcv x -> do
       when (x /= 0) $
         tell . First . getLast =<< look
       return x
-    CSnd x -> lift . lift $
+    CSnd x ->
       add (Last (Just x))
 
 day18a :: Challenge

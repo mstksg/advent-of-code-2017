@@ -37,17 +37,24 @@ resolver: lts-10.3
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - .
+# - location:
+#     git: https://github.com/ekmett/transformers-compat.git
+#     commit: c83a8bc7c8d2f4576001d24778d4356725c96c6b
+#   extra-dep: true
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - grid-7.8.9
+- transformers-0.5.5.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
+
+allow-newer: true
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
