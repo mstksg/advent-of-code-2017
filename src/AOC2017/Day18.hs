@@ -17,7 +17,7 @@ import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Fail
-import           Control.Monad.Prompt      (Prompt, prompt, runPromptM)
+import           Control.Monad.Operational
 import           Control.Monad.State       (MonadState, StateT(..), State, execStateT, evalState)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Control.Monad.Writer
@@ -78,20 +78,20 @@ data Command :: Type -> Type where
     CRcv :: Int -> Command Int    -- ^ input is current value of buffer
     CSnd :: Int -> Command ()     -- ^ input is thing being sent
 
-type Machine = Prompt (Memory :|: Command)
+type Machine = Program (Memory :|: Command)
 
 cRcv :: Int -> Machine Int
-cRcv = prompt . R . CRcv
+cRcv = singleton . R . CRcv
 cSnd :: Int -> Machine ()
-cSnd = prompt . R . CSnd
+cSnd = singleton . R . CSnd
 cGet :: Char -> Machine Int
-cGet = prompt . L . MGet
+cGet = singleton . L . MGet
 cSet :: Char -> Int -> Machine ()
-cSet r = prompt . L . MSet r
+cSet r = singleton . L . MSet r
 cMov :: Int -> Machine ()
-cMov = prompt . L . MMov
+cMov = singleton . L . MMov
 cPk  :: Machine Op
-cPk  = prompt $ L MPk
+cPk  = singleton $ L MPk
 
 data ProgState = PS { _psTape :: P.PointedList Op
                     , _psRegs :: M.Map Char Int
@@ -164,7 +164,7 @@ interpA = \case
 
 day18a :: Challenge
 day18a = show
-       . execPartA (many . runPromptM (interpMem >|< interpA) $ stepTape)
+       . execPartA (many . interpretWithMonad (interpMem >|< interpA) $ stepTape)
        . (`PS` M.empty)
        . parse
 
@@ -200,12 +200,12 @@ type MultiState = V.Vector 2 Thread
 stepThreads
     :: MaybeT (State MultiState) Int
 stepThreads = do
-    outA <- execWriterT $
-      zoom (V.ix 0) . many $ runPromptM (interpMem >|< interpB) stepTape
-    outB <- execWriterT $
-      zoom (V.ix 1) . many $ runPromptM (interpMem >|< interpB) stepTape
-    V.ix 0 . tBuffer <>= outB
-    V.ix 1 . tBuffer <>= outA
+    outA <- execWriterT . zoom (V.ix 0) $
+      many $ interpretWithMonad (interpMem >|< interpB) stepTape
+    outB <- execWriterT . zoom (V.ix 1) $
+      many $ interpretWithMonad (interpMem >|< interpB) stepTape
+    V.ix 0 . tBuffer .= outB
+    V.ix 1 . tBuffer .= outA
     guard . not $ null outA && null outB
     return $ length outB
 

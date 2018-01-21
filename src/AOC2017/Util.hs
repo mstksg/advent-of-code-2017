@@ -8,7 +8,6 @@ module AOC2017.Util (
   ) where
 
 import           Data.List
-import           Data.Traversable
 import qualified Data.Text        as T
 
 -- | Strict (!!)

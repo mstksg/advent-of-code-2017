@@ -24,7 +24,6 @@ library
                        AOC2017.Util
                        AOC2017.Util.Accum
                        AOC2017.Util.Disjoints
-                       AOC2017.Util.Prompt
                        AOC2017.Util.Tape
   other-modules:       AOC2017.Day01
                        AOC2017.Day02
@@ -52,8 +51,6 @@ library
                        AOC2017.Day24
                        AOC2017.Day25
   build-depends:       base >= 4.7 && < 5
-                     , MonadPrompt
-                     , pointedlist
                      , aeson
                      , arithmoi
                      , bytestring
@@ -71,6 +68,8 @@ library
                      , monad-control
                      , monad-loops
                      , mtl
+                     , operational
+                     , pointedlist
                      , reflection
                      , split
                      , text
