@@ -1,0 +1,98 @@
+name:                aoc2017
+version:             0.1.0.0
+github:              mstksg/advent-of-code-2017
+license:             BSD3
+author:              Justin Le
+maintainer:          justin@jle.im
+copyright:           (c) Justin Le 2018
+
+extra-source-files:
+- README.md
+- reflections.md
+
+synopsis:            Advent of Code 2017
+category:            Puzzle
+
+description: |
+    Advent of Code 2017!
+
+ghc-options:
+- -Wall
+
+dependencies:
+- base >= 4.7 && < 5
+- containers >=0.5.10.2
+- finite-typelits
+- text
+- deepseq
+
+default-extensions:
+- BangPatterns
+- DeriveFoldable
+- DeriveFunctor
+- DeriveTraversable
+- LambdaCase
+- MonadComprehensions
+- MultiWayIf
+- NumDecimals
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- TemplateHaskell
+- TupleSections
+- TypeApplications
+- ViewPatterns
+
+library:
+  source-dirs: src
+  dependencies:
+  - aeson
+  - arithmoi
+  - bytestring
+  - comonad
+  - curl
+  - filepath
+  - grid
+  - lens
+  - linear
+  - megaparsec
+  - mmorph
+  - monad-control
+  - monad-loops
+  - mtl
+  - operational
+  - pointedlist
+  - reflection
+  - split
+  - transformers >=0.5.5.0
+  - type-combinators
+  - vector
+  - vector-sized
+  - yaml
+
+executables:
+  aoc2017:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - ansi-terminal
+    - aoc2017
+    - criterion
+    - optparse-applicative
+    - time
+
+# tests:
+#   aoc2017-test:
+#     main: Spec.hs
+#     source-dirs: test
+#     ghc-options:
+#     - -threaded
+#     - -rtsopts
+#     - -with-rtsopts=-N
+#     dependencies:
+#     - base
+#     - aoc2017
