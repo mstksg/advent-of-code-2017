@@ -1,4 +1,4 @@
-module AOC2017.Day10 (day10a, day10b, knothash) where
+module AOC2017.Challenge.Day10 (day10a, day10b, knothash) where
 
 import           AOC2017.Types        (Challenge)
 import           AOC2017.Util         (strip)

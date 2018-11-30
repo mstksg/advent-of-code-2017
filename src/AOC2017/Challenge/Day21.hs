@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module AOC2017.Day21 (day21a, day21b) where
+module AOC2017.Challenge.Day21 (day21a, day21b) where
 
 import           AOC2017.Types   (Challenge)
 import           AOC2017.Util    ((!!!), strip)

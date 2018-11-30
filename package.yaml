@@ -53,6 +53,8 @@ library:
   - curl
   - filepath
   - grid
+  - haskell-names
+  - haskell-src-exts
   - lens
   - linear
   - megaparsec

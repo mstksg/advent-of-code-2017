@@ -1,13 +1,13 @@
-module AOC2017.Day14 (day14a, day14b) where
+module AOC2017.Challenge.Day14 (day14a, day14b) where
 
-import           AOC2017.Day10          (knothash)
-import           AOC2017.Types          (Challenge)
-import           AOC2017.Util           (strip)
-import           AOC2017.Util.Disjoints (Disjoints(..), disjoint)
-import           Data.Ix                (index, range)
-import           Text.Printf            (printf)
-import qualified Data.IntSet            as IS
-import qualified Data.Set               as S
+import           AOC2017.Challenge.Day10 (knothash)
+import           AOC2017.Types           (Challenge)
+import           AOC2017.Util            (strip)
+import           AOC2017.Util.Disjoints  (Disjoints(..), disjoint)
+import           Data.Ix                 (index, range)
+import           Text.Printf             (printf)
+import qualified Data.IntSet             as IS
+import qualified Data.Set                as S
 
 mkGrid :: String -> [[Bool]]
 mkGrid (strip->k) = map mkRow [0..127]

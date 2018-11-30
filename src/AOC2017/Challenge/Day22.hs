@@ -1,4 +1,4 @@
-module AOC2017.Day22 (day22a, day22b) where
+module AOC2017.Challenge.Day22 (day22a, day22b) where
 
 import           AOC2017.Types             (Challenge)
 import           Control.Lens              (makeClassy, use, at, non, zoom, (+=), (<<>=))

@@ -1,5 +1,5 @@
 -- module AOC2017.Day20 (day20a, day20b) where
-module AOC2017.Day20 where
+module AOC2017.Challenge.Day20 where
 
 import           AOC2017.Types   (Challenge)
 import           AOC2017.Util    (scanlT)

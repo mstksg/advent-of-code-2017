@@ -1,4 +1,4 @@
-module AOC2017.Day03 (day03a, day03b) where
+module AOC2017.Challenge.Day03 (day03a, day03b) where
 
 import           AOC2017.Types              (Challenge)
 import           Control.Monad.Trans.State  (State, state, evalState)

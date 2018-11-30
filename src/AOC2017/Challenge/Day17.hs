@@ -1,4 +1,4 @@
-module AOC2017.Day17 (day17a, day17b) where
+module AOC2017.Challenge.Day17 (day17a, day17b) where
 
 import           AOC2017.Types     (Challenge)
 import           AOC2017.Util.Tape (Tape(..), moveC)

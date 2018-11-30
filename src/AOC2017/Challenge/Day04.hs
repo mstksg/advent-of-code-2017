@@ -1,4 +1,4 @@
-module AOC2017.Day04 (day04a, day04b) where
+module AOC2017.Challenge.Day04 (day04a, day04b) where
 
 import           AOC2017.Types (Challenge)
 import           Data.List     (sort, nub)

@@ -1,4 +1,4 @@
-module AOC2017.Day01 (day01a, day01b) where
+module AOC2017.Challenge.Day01 (day01a, day01b) where
 
 import           AOC2017.Types (Challenge)
 import           Data.Char     (isDigit, digitToInt)

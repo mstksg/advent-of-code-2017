@@ -1,4 +1,4 @@
-module AOC2017.Day06 (day06a, day06b) where
+module AOC2017.Challenge.Day06 (day06a, day06b) where
 
 import           AOC2017.Types (Challenge)
 import qualified Data.Map      as M

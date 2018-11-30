@@ -1,4 +1,4 @@
-module AOC2017.Day12 (day12a, day12b) where
+module AOC2017.Challenge.Day12 (day12a, day12b) where
 
 import           AOC2017.Types          (Challenge)
 import           AOC2017.Util.Disjoints (Disjoints(..), disjoint)

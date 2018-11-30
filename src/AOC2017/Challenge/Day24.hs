@@ -1,4 +1,4 @@
-module AOC2017.Day24 (day24a, day24b) where
+module AOC2017.Challenge.Day24 (day24a, day24b) where
 
 import           AOC2017.Types             (Challenge)
 import           Control.Applicative       (Alternative(..))

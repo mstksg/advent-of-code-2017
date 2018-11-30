@@ -1,4 +1,4 @@
-module AOC2017.Day25 (day25a) where
+module AOC2017.Challenge.Day25 (day25a) where
 
 import           AOC2017.Types              (Challenge)
 import           AOC2017.Util               ((!!!))

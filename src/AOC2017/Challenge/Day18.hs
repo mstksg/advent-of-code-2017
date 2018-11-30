@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
-module AOC2017.Day18 (day18a, day18b) where
+module AOC2017.Challenge.Day18 (day18a, day18b) where
 
 import           AOC2017.Types             (Challenge)
 import           AOC2017.Util.Accum

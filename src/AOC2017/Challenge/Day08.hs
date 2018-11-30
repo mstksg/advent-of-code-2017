@@ -1,4 +1,4 @@
-module AOC2017.Day08 (day08a, day08b) where
+module AOC2017.Challenge.Day08 (day08a, day08b) where
 
 import           AOC2017.Types (Challenge)
 import           Data.Foldable (toList)
