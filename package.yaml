@@ -26,29 +26,6 @@ dependencies:
 - text
 - deepseq
 
-default-extensions:
-- BangPatterns
-- DataKinds
-- DeriveFoldable
-- GADTs
-- DeriveFunctor
-- DeriveTraversable
-- EmptyCase
-- KindSignatures
-- LambdaCase
-- MonadComprehensions
-- MultiWayIf
-- NumDecimals
-- PatternGuards
-- PolyKinds
-- RankNTypes
-- RecordWildCards
-- ScopedTypeVariables
-- TemplateHaskell
-- TupleSections
-- TypeApplications
-- ViewPatterns
-
 library:
   source-dirs: src
   dependencies:
@@ -81,6 +58,28 @@ library:
   - vector
   - vector-sized
   - yaml
+  default-extensions:
+  - BangPatterns
+  - DataKinds
+  - DeriveFoldable
+  - GADTs
+  - DeriveFunctor
+  - DeriveTraversable
+  - EmptyCase
+  - KindSignatures
+  - LambdaCase
+  - MonadComprehensions
+  - MultiWayIf
+  - NumDecimals
+  - PatternGuards
+  - PolyKinds
+  - RankNTypes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - TemplateHaskell
+  - TupleSections
+  - TypeApplications
+  - ViewPatterns
 
 executables:
   aoc2017:
