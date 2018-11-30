@@ -17,7 +17,6 @@ import           Data.Semigroup
 import           Options.Applicative
 import           Text.Printf
 import           Text.Read
-import qualified Data.IntMap         as IM
 import qualified Data.Map            as M
 import qualified System.Console.ANSI as ANSI
 
@@ -45,16 +44,16 @@ main = do
     Cfg{..} <- configFile $ fromMaybe "aoc2017-conf.yaml" _oConfig
     let toRun = case _oTestSpec of
           TSAll -> Right challengeMap
-          TSDayAll (succ.fromIntegral->d) ->
-            case IM.lookup d challengeMap of
-              Nothing -> Left  $ printf "Day not yet available: %d" d
-              Just cs -> Right $ IM.singleton d cs
-          TSDayPart (succ.fromIntegral->d) p -> do
-            ps <- maybe (Left $ printf "Day not yet available: %d" d) Right $
-                    IM.lookup d challengeMap
+          TSDayAll d ->
+            case M.lookup d challengeMap of
+              Nothing -> Left  $ printf "Day not yet available: %d" (getFinite d + 1)
+              Just cs -> Right $ M.singleton d cs
+          TSDayPart d p -> do
+            ps <- maybe (Left $ printf "Day not yet available: %d" (getFinite d + 1)) Right $
+                    M.lookup d challengeMap
             c  <- maybe (Left $ printf "Part not found: %c" p) Right $
                     M.lookup p ps
-            return $ IM.singleton d (M.singleton p c)
+            return $ M.singleton d (M.singleton p c)
     case toRun of
       Left e   -> putStrLn e
       Right cs -> flip (runAll _cfgSession _oLock) cs $ \c CD{..} -> do
@@ -86,18 +85,18 @@ runAll
     :: Maybe String
     -> Bool
     -> (Challenge -> ChallengeData -> IO ())
-    -> IM.IntMap (M.Map Char Challenge)
+    -> ChallengeMap
     -> IO ()
-runAll sess lock f = fmap void          $
-                     IM.traverseWithKey $ \d ->
-                     M.traverseWithKey  $ \p c -> do
-    let CP{..} = challengePaths d p
-    printf ">> Day %02d%c\n" d p
+runAll sess lock f = fmap void         $
+                     M.traverseWithKey $ \d ->
+                     M.traverseWithKey $ \p c -> do
+    let CP{..} = challengePaths (CS d p)
+    printf ">> Day %02d%c\n" (getFinite d + 1) p
     when lock $ do
-      CD{..} <- challengeData sess d p
+      CD{..} <- challengeData sess (CS d p)
       forM_ _cdInp $ \inp ->
         writeFile _cpAnswer =<< evaluate (force (c inp))
-    f c =<< challengeData sess d p
+    f c =<< challengeData sess (CS d p)
 
 testCase
     :: Bool

@@ -28,13 +28,19 @@ dependencies:
 
 default-extensions:
 - BangPatterns
+- DataKinds
 - DeriveFoldable
+- GADTs
 - DeriveFunctor
 - DeriveTraversable
+- EmptyCase
+- KindSignatures
 - LambdaCase
 - MonadComprehensions
 - MultiWayIf
 - NumDecimals
+- PatternGuards
+- PolyKinds
 - RankNTypes
 - RecordWildCards
 - ScopedTypeVariables
@@ -51,12 +57,15 @@ library:
   - bytestring
   - comonad
   - curl
+  - directory
   - filepath
   - grid
   - haskell-names
   - haskell-src-exts
   - lens
+  - lens-aeson
   - linear
+  - hpack
   - megaparsec
   - mmorph
   - monad-control
@@ -66,6 +75,7 @@ library:
   - pointedlist
   - reflection
   - split
+  - template-haskell
   - transformers >=0.5.5.0
   - type-combinators
   - vector

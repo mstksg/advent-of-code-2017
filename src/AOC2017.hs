@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns    #-}
 
 module AOC2017 (
@@ -37,6 +38,7 @@ import           AOC2017.Challenge.Day23 as AOC
 import           AOC2017.Challenge.Day24 as AOC
 import           AOC2017.Challenge.Day25 as AOC
 
+import           AOC2017.Discover
 import           AOC2017.Types              as AOC
 import           AOC2017.Util               as AOC
 import           Control.DeepSeq
@@ -44,9 +46,10 @@ import           Control.Exception
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
+import           Data.Finite
 import           Data.Foldable
 import           Data.List
-import           Data.Monoid
+import           Data.Map                   (Map)
 import           GHC.Generics               (Generic)
 import           Network.Curl
 import           System.FilePath
@@ -54,44 +57,44 @@ import           System.IO.Error
 import           Text.Printf
 import qualified Data.Aeson                 as A
 import qualified Data.ByteString            as BS
-import qualified Data.IntMap                as IM
-import qualified Data.Map                   as M
 import qualified Data.Yaml                  as Y
 
-challengeMap :: IM.IntMap (M.Map Char Challenge)
-challengeMap = IM.fromList
-    [ (d, M.fromList (zip ['a'..] ps))
-    | (d, ps) <- challenges
-    ]
-   <> IM.singleton 25 (M.singleton 'a' day25a)
+challengeMap :: Map (Finite 25) (Map Char Challenge)
+challengeMap = mkChallengeMap $$(challengeList "src/AOC2017/Challenge")
 
-challenges :: [(Int, [Challenge])]
-challenges = [ ( 1, [day01a, day01b])
-             , ( 2, [day02a, day02b])
-             , ( 3, [day03a, day03b])
-             , ( 4, [day04a, day04b])
-             , ( 5, [day05a, day05b])
-             , ( 6, [day06a, day06b])
-             , ( 7, [day07a, day07b])
-             , ( 8, [day08a, day08b])
-             , ( 9, [day09a, day09b])
-             , (10, [day10a, day10b])
-             , (11, [day11a, day11b])
-             , (12, [day12a, day12b])
-             , (13, [day13a, day13b])
-             , (14, [day14a, day14b])
-             , (15, [day15a, day15b])
-             , (16, [day16a, day16b])
-             , (17, [day17a, day17b])
-             , (18, [day18a, day18b])
-             , (19, [day19a, day19b])
-             , (20, [day20a, day20b])
-             , (21, [day21a, day21b])
-             , (22, [day22a, day22b])
-             , (23, [day23a, day23b])
-             , (24, [day24a, day24b])
-             , (25, [day25a        ])
-             ]
+-- IM.fromList
+--     [ (d, M.fromList (zip ['a'..] ps))
+--     | (d, ps) <- challenges
+--     ]
+--    <> IM.singleton 25 (M.singleton 'a' day25a)
+
+-- challenges :: [(Int, [Challenge])]
+-- challenges = [ ( 1, [day01a, day01b])
+--              , ( 2, [day02a, day02b])
+--              , ( 3, [day03a, day03b])
+--              , ( 4, [day04a, day04b])
+--              , ( 5, [day05a, day05b])
+--              , ( 6, [day06a, day06b])
+--              , ( 7, [day07a, day07b])
+--              , ( 8, [day08a, day08b])
+--              , ( 9, [day09a, day09b])
+--              , (10, [day10a, day10b])
+--              , (11, [day11a, day11b])
+--              , (12, [day12a, day12b])
+--              , (13, [day13a, day13b])
+--              , (14, [day14a, day14b])
+--              , (15, [day15a, day15b])
+--              , (16, [day16a, day16b])
+--              , (17, [day17a, day17b])
+--              , (18, [day18a, day18b])
+--              , (19, [day19a, day19b])
+--              , (20, [day20a, day20b])
+--              , (21, [day21a, day21b])
+--              , (22, [day22a, day22b])
+--              , (23, [day23a, day23b])
+--              , (24, [day24a, day24b])
+--              , (25, [day25a        ])
+--              ]
 
 data ChallengePaths = CP { _cpDataUrl :: !FilePath
                          , _cpInput   :: !FilePath
@@ -105,23 +108,21 @@ data ChallengeData = CD { _cdInp   :: !(Either [String] String)
                         , _cdTests :: ![(String, Maybe String)]
                         }
 
-challengePaths
-    :: Int
-    -> Char
-    -> ChallengePaths
-challengePaths d p = CP
-    { _cpDataUrl = printf "http://adventofcode.com/2017/day/%d/input" d
-    , _cpInput   = "data"     </> printf "%02d" d <.> "txt"
-    , _cpAnswer  = "data/ans" </> printf "%02d%c" d p <.> "txt"
-    , _cpTests   = "test-data" </> printf "%02d%c" d p <.> "txt"
+challengePaths :: ChallengeSpec -> ChallengePaths
+challengePaths (CS d p) = CP
+    { _cpDataUrl = printf "http://adventofcode.com/2017/day/%d/input" d'
+    , _cpInput   = "data"     </> printf "%02d" d' <.> "txt"
+    , _cpAnswer  = "data/ans" </> printf "%02d%c" d' p <.> "txt"
+    , _cpTests   = "test-data" </> printf "%02d%c" d' p <.> "txt"
     }
+  where
+    d' = getFinite d + 1
 
 challengeData
     :: Maybe String
-    -> Int
-    -> Char
+    -> ChallengeSpec
     -> IO ChallengeData
-challengeData sess d p = do
+challengeData sess spec = do
     inp   <- runExceptT . asum $
       [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe _cpInput
       , fetchInput
@@ -130,7 +131,7 @@ challengeData sess d p = do
     ts    <- foldMap (parseTests . lines) <$> readFileMaybe _cpTests
     return $ CD inp ans ts
   where
-    CP{..} = challengePaths d p
+    CP{..} = challengePaths spec
     fileErr = printf "Input file not found at %s" _cpInput
     readFileMaybe :: FilePath -> IO (Maybe String)
     readFileMaybe =
