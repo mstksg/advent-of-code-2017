@@ -32,6 +32,11 @@ challengeList dir = TExp
                 <$> runIO (getChallengeSpecs dir)
 
 
+-- | Meant to be called like:
+--
+-- @
+-- mkChallengeMap $$(challengeList "src/AOC2017/Challenge")
+-- @
 mkChallengeMap :: [(Finite 25, (Char, Challenge))] -> ChallengeMap
 mkChallengeMap = M.unionsWith M.union
                . map (uncurry M.singleton . second (uncurry M.singleton))
