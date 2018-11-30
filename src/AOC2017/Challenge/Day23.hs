@@ -1,7 +1,6 @@
 module AOC2017.Challenge.Day23 (day23a, day23b) where
 
 import           AOC2017.Types
-import           AOC2017.Util.Tape                (Tape(..), HasTape(..), listToTape, move)
 import           Control.Applicative              (many)
 import           Control.Lens                     (set, use, at, non, _last, forMOf_, Iso', iso)
 import           Control.Lens.Operators           ((.=), (%=))
@@ -12,6 +11,7 @@ import           Control.Monad.Trans.Maybe        (MaybeT(..))
 import           Control.Monad.Writer             (Writer, runWriter, tell, Sum(..))
 import           Data.Char                        (isAlpha)
 import           Math.NumberTheory.Primes.Testing (isPrime)
+import qualified Data.List.PointedList            as PL
 import qualified Data.Map                         as M
 
 type Addr = Either Char Int
@@ -54,7 +54,7 @@ optimize = set (     _last . _OJmp . _3     ) (-7)
     splot :: Int -> Iso' [a] ([a], [a])
     splot n = iso (splitAt n) (uncurry (++))
 
-data ProgState = PS { _psTape :: Tape Op
+data ProgState = PS { _psTape :: PL.PointedList Op
                     , _psRegs :: M.Map Char Int
                     }
 makeClassy ''ProgState
@@ -69,7 +69,7 @@ runTapeProg tp ps = runWriter . flip runStateT ps . runMaybeT $ tp
 
 -- | Single step through program tape.
 stepTape :: TapeProg ()
-stepTape = use (psTape . tFocus) >>= \case
+stepTape = use (psTape . PL.focus) >>= \case
     OBin bo x y -> do
       yVal <- addrVal y
       psRegs . at x . non 0 %= \xVal -> runBO bo xVal yVal
@@ -85,21 +85,21 @@ stepTape = use (psTape . tFocus) >>= \case
     addrVal (Left r)  = use (psRegs . at r . non 0)
     addrVal (Right x) = return x
     advance n = do
-      Just t' <- move n <$> use psTape
+      Just t' <- PL.moveN n <$> use psTape
       psTape .= t'
 
 day23a :: Challenge
 day23a = runC C
-    { cParse = listToTape . parse
+    { cParse = PL.fromList . parse
     , cShow  = show . getSum
     , cSolve = Just . snd
              . runTapeProg (many stepTape)    -- stepTape until program terminates
              . (`PS` M.empty)
-    } 
+    }
 
 day23b :: Challenge
 day23b = runC C
-    { cParse = listToTape . optimize . parse
+    { cParse = PL.fromList . optimize . parse
     , cShow  = show
     , cSolve = Just . M.findWithDefault 0 'h' . _psRegs . snd . fst
              . runTapeProg (many stepTape)
