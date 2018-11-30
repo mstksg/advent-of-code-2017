@@ -12,6 +12,7 @@ import           Control.Monad
 import           Criterion
 import           Data.Char
 import           Data.Finite
+import           Data.List
 import           Data.Maybe
 import           Data.Semigroup
 import           Options.Applicative
@@ -39,7 +40,7 @@ main = do
     O{..} <- execParser $ info (parseOpts <**> helper)
                 ( fullDesc
                <> header "aoc2017 - Advent of Code 2017 challenge runner"
-               <> progDesc "Run challenges from Advent of Code 2017"
+               <> progDesc ("Run challenges from Advent of Code 2017. Available days: " ++ availableDays)
                 )
     Cfg{..} <- configFile $ fromMaybe "aoc2017-conf.yaml" _oConfig
     let toRun = case _oTestSpec of
@@ -80,6 +81,11 @@ main = do
 
         when _oBench . forM_ _cdInp $ \inp ->
           benchmark (nf c inp)
+  where
+    availableDays = intercalate ", "
+                  . map (show . (+ 1) . getFinite)
+                  . M.keys
+                  $ challengeMap
 
 runAll
     :: Maybe String

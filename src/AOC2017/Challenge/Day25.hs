@@ -1,6 +1,6 @@
 module AOC2017.Challenge.Day25 (day25a) where
 
-import           AOC2017.Types              (Challenge)
+import           AOC2017.Types
 import           AOC2017.Util               ((!!!))
 import           Control.Applicative        (Applicative(..), Alternative(..))
 import           Control.Lens.At            (Contains(..))
@@ -27,9 +27,13 @@ step :: RuleMap -> Step -> IS.IntSet -> (Step, IS.IntSet)
 step rm s0@(Sum i,st) = first (s0 <>) . contains i (runRule rm st)
 
 day25a :: Challenge
-day25a (parse->RS{..}) = show . IS.size . snd . (!!! rsSteps)
-                       . iterate (uncurry (step rsRuleMap))
-                       $ ((0, rsStart), IS.empty)
+day25a = runC C
+    { cParse = Just . parse
+    , cShow  = show
+    , cSolve = \RS{..} -> Just . IS.size . snd . (!!! rsSteps)
+                        . iterate (uncurry (step rsRuleMap))
+                        $ ((0, rsStart), IS.empty)
+    }
 
 
 

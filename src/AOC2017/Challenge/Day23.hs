@@ -1,7 +1,7 @@
 module AOC2017.Challenge.Day23 (day23a, day23b) where
 
-import           AOC2017.Types                    (Challenge)
-import           AOC2017.Util.Tape                (Tape(..), HasTape(..), unsafeTape, move)
+import           AOC2017.Types
+import           AOC2017.Util.Tape                (Tape(..), HasTape(..), listToTape, move)
 import           Control.Applicative              (many)
 import           Control.Lens                     (set, use, at, non, _last, forMOf_, Iso', iso)
 import           Control.Lens.Operators           ((.=), (%=))
@@ -89,13 +89,19 @@ stepTape = use (psTape . tFocus) >>= \case
       psTape .= t'
 
 day23a :: Challenge
-day23a = show . getSum . snd
-       . runTapeProg (many stepTape)    -- stepTape until program terminates
-       . (`PS` M.empty) . unsafeTape
-       . parse
+day23a = runC C
+    { cParse = listToTape . parse
+    , cShow  = show . getSum
+    , cSolve = Just . snd
+             . runTapeProg (many stepTape)    -- stepTape until program terminates
+             . (`PS` M.empty)
+    } 
 
 day23b :: Challenge
-day23b = show . M.findWithDefault 0 'h' . _psRegs . snd . fst
-       . runTapeProg (many stepTape)
-       . (`PS` M.singleton 'a' 1) . unsafeTape
-       . optimize . parse
+day23b = runC C
+    { cParse = listToTape . optimize . parse
+    , cShow  = show
+    , cSolve = Just . M.findWithDefault 0 'h' . _psRegs . snd . fst
+             . runTapeProg (many stepTape)
+             . (`PS` M.singleton 'a' 1)
+    }
