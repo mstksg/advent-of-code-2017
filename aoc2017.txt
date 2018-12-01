@@ -264,17 +264,20 @@ day12b :: Challenge
 module AOC2017
 challengeMap :: Map (Finite 25) (Map Char Challenge)
 data ChallengePaths
-CP :: !FilePath -> !FilePath -> !FilePath -> !FilePath -> ChallengePaths
+CP :: !FilePath -> !FilePath -> !FilePath -> !FilePath -> !FilePath -> !FilePath -> ChallengePaths
 [_cpDataUrl] :: ChallengePaths -> !FilePath
+[_cpPromptUrl] :: ChallengePaths -> !FilePath
 [_cpInput] :: ChallengePaths -> !FilePath
 [_cpAnswer] :: ChallengePaths -> !FilePath
+[_cpPrompt] :: ChallengePaths -> !FilePath
 [_cpTests] :: ChallengePaths -> !FilePath
 challengePaths :: ChallengeSpec -> ChallengePaths
 data ChallengeData
-CD :: !(Either [String] String) -> !(Maybe String) -> ![(String, Maybe String)] -> ChallengeData
+CD :: !(Either [String] String) -> !(Maybe String) -> ![(String, Maybe String)] -> !(Either [String] String) -> ChallengeData
 [_cdInp] :: ChallengeData -> !(Either [String] String)
 [_cdAns] :: ChallengeData -> !(Maybe String)
 [_cdTests] :: ChallengeData -> ![(String, Maybe String)]
+[_cdPrompt] :: ChallengeData -> !(Either [String] String)
 challengeData :: Maybe String -> ChallengeSpec -> IO ChallengeData
 data Config
 Cfg :: Maybe String -> Config
