@@ -10,7 +10,7 @@ Day 1
 
 *([code][d1c])*
 
-[d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day01.hs
+[d1c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day01.hs
 
 We can generate a list of consecutive items (while looping around) very crudely
 using:
@@ -78,7 +78,7 @@ Day 2
 
 *([code][d2c])*
 
-[d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day02.hs
+[d2c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day02.hs
 
 Good stream processing demonstration.  Both problems just boil down to summing
 a function on all lines:
@@ -148,7 +148,7 @@ Day 3
 
 *([code][d3c])*
 
-[d3c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day03.hs
+[d3c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day03.hs
 
 My Day 3 solution revolves around the `Trail` monoid:
 
@@ -293,7 +293,7 @@ Day 4
 
 *([code][d4c])*
 
-[d4c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day04.hs
+[d4c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day04.hs
 
 Day 4 is very basic stream processing.  Just filter for lines that have "all
 unique" items, and count how many lines are remaining.
@@ -349,7 +349,7 @@ Day 5
 
 *([code][d5c])*
 
-[d5c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day05.hs
+[d5c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day05.hs
 
 Day 5 centers around the `Tape` zipper:
 
@@ -463,7 +463,7 @@ Day 6
 
 *([code][d6c])*
 
-[d6c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day06.hs
+[d6c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day06.hs
 
 Day 6 is yet another simulation of a virtual machine.  There might be an
 analytic way to do things, but input size is small enough that you can just
@@ -571,7 +571,7 @@ Day 7
 
 *([code][d7c])*
 
-[d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day07.hs
+[d7c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day07.hs
 
 We can just build the tree in Haskell.  We have basically a simple rose tree of
 `Int`s, so we can use `Tree Int` from `Data.Tree` (from the *containers*
@@ -719,7 +719,7 @@ Day 8
 
 *([code][d8c])*
 
-[d8c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day08.hs
+[d8c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day08.hs
 
 Happy to see that Day 8, like day 7, is another problem that is very suitable
 for Haskell! :)
@@ -862,7 +862,7 @@ Day 9
 
 *([code][d9c])*
 
-[d9c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day09.hs
+[d9c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day09.hs
 
 Today I actually decided to [live stream][d9s] my leader board attempt!
 Admittedly I was in a new and noisy environment, so adding live streaming to
@@ -980,7 +980,7 @@ Day 10
 
 *([code][d10c])* *([stream][d10s])*
 
-[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day10.hs
+[d10c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day10.hs
 [d10s]: https://www.twitch.tv/videos/208287550
 
 I feel like I actually had a shot today, if it weren't for a couple of silly
@@ -1131,7 +1131,7 @@ Day 11
 
 *([code][d11c])*
 
-[d11c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day11.hs
+[d11c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day11.hs
 
 Nothing too interesting here!  Just a straightforward application of the great
 *[grid][]* library.
@@ -1212,7 +1212,7 @@ Day 12
 
 *([code][d12c])*
 
-[d12c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day12.hs
+[d12c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day12.hs
 
 For Day 12, I made a monoid that is collection of disjoint sets, which we use
 to model the set of distinct "groups" in our puzzle.  The sets represent things
@@ -1305,7 +1305,7 @@ Day 13
 
 *([code][d13c])*
 
-[d13c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day13.hs
+[d13c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day13.hs
 
 Day 13 is a puzzle that reveals itself nicely after putting in a moment to
 think of some analytic solutions.
@@ -1369,7 +1369,7 @@ Day 14
 
 *([code][d14c])*
 
-[d14c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day14.hs
+[d14c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day14.hs
 
 Part 1 is a simple application of the "knot hash" function we wrote:
 different inputs.  We can make a row of a grid by running `knothash :: String
@@ -1461,7 +1461,7 @@ Day 15
 
 *([code][d15c])*
 
-[d15c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day15.hs
+[d15c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day15.hs
 
 This one is a really "easy" one from a Haskell perspective.  We can just
 generate the outputs of each stream as an infinite lazily linked list, take the
@@ -1548,7 +1548,7 @@ Day 16
 
 *([code][d16c])*
 
-[d16c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day16.hs
+[d16c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day16.hs
 
 Day 16 was one of my favorites!  It was what prompted this [joyful tweet][group
 theory tweet]:
@@ -1696,7 +1696,7 @@ Day 17
 
 *([code][d17c])*
 
-[d17c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day17.hs
+[d17c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day17.hs
 
 For Day 17 I used `Tape` again -- for the O(1) insertions.  (Even though moving
 around is amortized O(n)).
@@ -1786,7 +1786,7 @@ Day 18
 
 *([code][d18c])*
 
-[d18c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day18.hs
+[d18c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day18.hs
 
 ### Day 18 Benchmarks
 
@@ -1813,7 +1813,7 @@ Day 19
 
 *([code][d19c])*
 
-[d19c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day19.hs
+[d19c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day19.hs
 
 Ever since discovering how fun `many` is in Day 18, I felt inspired to abuse it
 again in Day 19.
@@ -1947,7 +1947,7 @@ Day 20
 
 *([code][d20c])*
 
-[d20c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day20.hs
+[d20c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day20.hs
 
 Day 20 starts out as a simple physics simulator/numerical integrator:
 
@@ -2098,7 +2098,7 @@ Day 21
 
 *([code][d21c])*
 
-[d21c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day21.hs
+[d21c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day21.hs
 
 ### Day 21 Benchmarks
 
@@ -2125,7 +2125,7 @@ Day 22
 
 *([code][d22c])*
 
-[d22c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day22.hs
+[d22c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day22.hs
 
 ### Day 22 Benchmarks
 
@@ -2152,7 +2152,7 @@ Day 23
 
 *([code][d23c])*
 
-[d23c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day23.hs
+[d23c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day23.hs
 
 ### Day 23 Benchmarks
 
@@ -2178,7 +2178,7 @@ Day 24
 
 *([code][d24c])*
 
-[d24c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day24.hs
+[d24c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day24.hs
 
 ### Day 24 Benchmarks
 
@@ -2205,7 +2205,7 @@ Day 25
 
 *([code][d25c])*
 
-[d25c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Day25.hs
+[d25c]: https://github.com/mstksg/advent-of-code-2017/blob/master/src/AOC2017/Challenge/Day25.hs
 
 ### Day 25 Benchmarks
 
