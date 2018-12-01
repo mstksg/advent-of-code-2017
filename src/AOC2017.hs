@@ -146,7 +146,6 @@ challengeData sess spec = do
     fetchPrompt = do
       rHtml <- fetchUrl _cpPromptUrl
       let ps = M.fromList . zip ['a'..] . processPrompt $ rHtml
-      liftIO $ putStrLn rHtml
       pMaybe <- maybe (throwE ["Part not yet released"]) pure
               . M.lookup (_csPart spec)
               $ ps
