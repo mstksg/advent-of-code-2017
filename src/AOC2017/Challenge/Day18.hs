@@ -74,8 +74,10 @@ data Memory :: Type -> Type where
 
 -- | Abstract data type describing "IO" available to the abstract machine
 data Command :: Type -> Type where
-    CRcv :: Int -> Command Int    -- ^ input is current value of buffer
-    CSnd :: Int -> Command ()     -- ^ input is thing being sent
+    -- | Input is current value of buffer
+    CRcv :: Int -> Command Int
+    -- | Input is thing being sent
+    CSnd :: Int -> Command ()
 
 type Machine = Program (Memory :|: Command)
 

@@ -39,19 +39,23 @@ library:
   - grid
   - haskell-names
   - haskell-src-exts
+  - hpack
   - lens
   - lens-aeson
   - linear
-  - hpack
   - megaparsec
   - mmorph
   - monad-control
   - monad-loops
   - mtl
   - operational
+  - pandoc
+  - pandoc-types
   - pointedlist
   - reflection
   - split
+  - taggy
+  - taggy-lens
   - template-haskell
   - transformers >=0.5.5.0
   - type-combinators

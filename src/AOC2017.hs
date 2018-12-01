@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ViewPatterns    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module AOC2017 (
     module AOC
@@ -43,13 +44,16 @@ import           AOC2017.Types              as AOC
 import           AOC2017.Util               as AOC
 import           Control.DeepSeq
 import           Control.Exception
+import           Control.Lens hiding        ((<.>))
 import           Control.Monad
 import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.Except
 import           Data.Finite
 import           Data.Foldable
 import           Data.List
 import           Data.Map                   (Map)
+import           Data.Text.Lens
 import           GHC.Generics               (Generic)
 import           Network.Curl
 import           System.FilePath
@@ -57,63 +61,40 @@ import           System.IO.Error
 import           Text.Printf
 import qualified Data.Aeson                 as A
 import qualified Data.ByteString            as BS
+import qualified Data.Map                   as M
+import qualified Data.Text                  as T
+import qualified Data.Text.IO               as T
 import qualified Data.Yaml                  as Y
+import qualified Text.Pandoc                as P
+import qualified Text.Taggy                 as H
+import qualified Text.Taggy.Lens            as H
 
 challengeMap :: Map (Finite 25) (Map Char Challenge)
 challengeMap = mkChallengeMap $$(challengeList "src/AOC2017/Challenge")
 
--- IM.fromList
---     [ (d, M.fromList (zip ['a'..] ps))
---     | (d, ps) <- challenges
---     ]
---    <> IM.singleton 25 (M.singleton 'a' day25a)
-
--- challenges :: [(Int, [Challenge])]
--- challenges = [ ( 1, [day01a, day01b])
---              , ( 2, [day02a, day02b])
---              , ( 3, [day03a, day03b])
---              , ( 4, [day04a, day04b])
---              , ( 5, [day05a, day05b])
---              , ( 6, [day06a, day06b])
---              , ( 7, [day07a, day07b])
---              , ( 8, [day08a, day08b])
---              , ( 9, [day09a, day09b])
---              , (10, [day10a, day10b])
---              , (11, [day11a, day11b])
---              , (12, [day12a, day12b])
---              , (13, [day13a, day13b])
---              , (14, [day14a, day14b])
---              , (15, [day15a, day15b])
---              , (16, [day16a, day16b])
---              , (17, [day17a, day17b])
---              , (18, [day18a, day18b])
---              , (19, [day19a, day19b])
---              , (20, [day20a, day20b])
---              , (21, [day21a, day21b])
---              , (22, [day22a, day22b])
---              , (23, [day23a, day23b])
---              , (24, [day24a, day24b])
---              , (25, [day25a        ])
---              ]
-
-data ChallengePaths = CP { _cpDataUrl :: !FilePath
-                         , _cpInput   :: !FilePath
-                         , _cpAnswer  :: !FilePath
-                         , _cpTests   :: !FilePath
+data ChallengePaths = CP { _cpDataUrl   :: !FilePath
+                         , _cpPromptUrl :: !FilePath
+                         , _cpInput     :: !FilePath
+                         , _cpAnswer    :: !FilePath
+                         , _cpPrompt    :: !FilePath
+                         , _cpTests     :: !FilePath
                          }
   deriving Show
 
-data ChallengeData = CD { _cdInp   :: !(Either [String] String)
-                        , _cdAns   :: !(Maybe String)
-                        , _cdTests :: ![(String, Maybe String)]
+data ChallengeData = CD { _cdInp    :: !(Either [String] String)
+                        , _cdAns    :: !(Maybe String)
+                        , _cdTests  :: ![(String, Maybe String)]
+                        , _cdPrompt :: !(Either [String] String)
                         }
 
 challengePaths :: ChallengeSpec -> ChallengePaths
 challengePaths (CS d p) = CP
-    { _cpDataUrl = printf "http://adventofcode.com/2017/day/%d/input" d'
-    , _cpInput   = "data"     </> printf "%02d" d' <.> "txt"
-    , _cpAnswer  = "data/ans" </> printf "%02d%c" d' p <.> "txt"
-    , _cpTests   = "test-data" </> printf "%02d%c" d' p <.> "txt"
+    { _cpDataUrl   = printf "https://adventofcode.com/2017/day/%d/input" d'
+    , _cpPromptUrl = printf "https://adventofcode.com/2017/day/%d" d'
+    , _cpInput     = "data"     </> printf "%02d" d' <.> "txt"
+    , _cpAnswer    = "data/ans" </> printf "%02d%c" d' p <.> "txt"
+    , _cpPrompt    = "prompt"   </> printf "%02d%c" d' p <.> "txt"
+    , _cpTests     = "test-data" </> printf "%02d%c" d' p <.> "txt"
     }
   where
     d' = getFinite d + 1
@@ -127,9 +108,13 @@ challengeData sess spec = do
       [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe _cpInput
       , fetchInput
       ]
-    ans   <- readFileMaybe _cpAnswer
-    ts    <- foldMap (parseTests . lines) <$> readFileMaybe _cpTests
-    return $ CD inp ans ts
+    prompt <- runExceptT . asum $
+      [ ExceptT $ maybe (Left [fileErr]) Right <$> readFileMaybe _cpPrompt
+      , fetchPrompt
+      ]
+    ans    <- readFileMaybe _cpAnswer
+    ts     <- foldMap (parseTests . lines) <$> readFileMaybe _cpTests
+    return $ CD inp ans ts prompt
   where
     CP{..} = challengePaths spec
     fileErr = printf "Input file not found at %s" _cpInput
@@ -138,21 +123,36 @@ challengeData sess spec = do
         (traverse (evaluate . force) . either (const Nothing) Just =<<)
        . tryJust (guard . isDoesNotExistError)
        . readFile
-    fetchInput :: ExceptT [String] IO String
-    fetchInput = do
+    fetchUrl :: FilePath -> ExceptT [String] IO String
+    fetchUrl u = do
       s <- maybe (throwE ["Session key needed to fetch input"]) return
         sess
-      (cc, r) <- liftIO . withCurlDo . curlGetString _cpDataUrl $
+      (cc, r) <- liftIO . withCurlDo . curlGetString u $
           CurlCookie (printf "session=%s" s) : method_GET
       case cc of
         CurlOK -> return ()
         _      -> throwE [ "Error contacting advent of code server to fetch input"
                          , "Possible invalid session key"
-                         , printf "Url: %s" _cpDataUrl
+                         , printf "Url: %s" u
                          , printf "Server response: %s" r
                          ]
+      return r
+    fetchInput :: ExceptT [String] IO String
+    fetchInput = do
+      r <- fetchUrl _cpDataUrl
       liftIO $ writeFile _cpInput r
       return r
+    fetchPrompt :: ExceptT [String] IO String
+    fetchPrompt = do
+      rHtml <- fetchUrl _cpPromptUrl
+      let ps = M.fromList . zip ['a'..] . processPrompt $ rHtml
+      liftIO $ putStrLn rHtml
+      pMaybe <- maybe (throwE ["Part not yet released"]) pure
+              . M.lookup (_csPart spec)
+              $ ps
+      p      <- either throwE pure pMaybe
+      liftIO $ T.writeFile _cpPrompt p
+      return $ T.unpack p
     parseTests :: [String] -> [(String, Maybe String)]
     parseTests xs = case break (">>> " `isPrefixOf`) xs of
       (inp,[])
@@ -163,6 +163,20 @@ challengeData sess spec = do
         | otherwise ->
             let ans' = ans <$ guard (not (null ans))
             in  (unlines inp, ans') : parseTests rest
+
+processPrompt :: String -> [Either [String] T.Text]
+processPrompt html = runExceptT $ do
+    article <- lift $ html ^.. packed . H.html
+                             . H.allNamed (only "article")
+                             . to (set H.name "body")
+                             . to H.NodeElement
+    let articleText = unpacked . packed . H.html # article
+    either (throwE . (:[]) . show) pure . P.runPure $ do
+      p <- P.readHtml (P.def { P.readerExtensions = exts })
+              articleText
+      P.writeMarkdown (P.def { P.writerExtensions = exts }) p
+  where
+    exts = P.disableExtension P.Ext_smart P.pandocExtensions
 
 data Config = Cfg { _cfgSession :: Maybe String }
   deriving (Generic)
