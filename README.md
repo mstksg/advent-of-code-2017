@@ -1,6 +1,12 @@
 Advent of Code 2017
 ===================
 
+*[2016][]* / *2017* / *[2018][]* / *[2019][]*
+
+[2016]: https://github.com/mstksg/advent-of-code-2016
+[2018]: https://github.com/mstksg/advent-of-code-2018
+[2019]: https://github.com/mstksg/advent-of-code-2019
+
 **Warning: Spoilers**
 
 [Reflections and Benchmarks][RnB]
