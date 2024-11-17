@@ -1,12 +1,7 @@
 Advent of Code 2017
 ===================
 
-*[2016][]* / *2017*
-
-[2016]: https://github.com/mstksg/advent-of-code-2016
-[2018]: https://github.com/mstksg/advent-of-code-2018
-
-For 2018 onwards, check out my [Advent of Code Megarepo][megarepo]!
+For 2016 and 2018 onwards, check out my [Advent of Code Megarepo][megarepo]!
 
 [megarepo]: https://github.com/mstksg/advent-of-code
 
